@@ -1,19 +1,35 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import AuthLayout from "../layouts/AuthLayout.jsx";
+import { getErrorMessage } from "../lib/api.js";
 
 export default function RegisterPage() {
+  const { register } = useAuth();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (!name || !email || password.length < 8) {
       setError("Enter your name, email, and a password of at least 8 characters.");
       return;
     }
-    setError("Account registration will be available in the next phase.");
+
+    setPending(true);
+    setError("");
+    try {
+      await register({ name, email, password });
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(getErrorMessage(err, "Unable to create this account."));
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -69,8 +85,8 @@ export default function RegisterPage() {
             {error}
           </p>
         ) : null}
-        <button className="btn btn-primary mt-2" type="submit">
-          Create account
+        <button className="btn btn-primary mt-2" type="submit" disabled={pending}>
+          {pending ? "Creating account…" : "Create account"}
         </button>
       </form>
     </AuthLayout>

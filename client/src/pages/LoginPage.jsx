@@ -1,18 +1,36 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import AuthLayout from "../layouts/AuthLayout.jsx";
+import { getErrorMessage } from "../lib/api.js";
 
 export default function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (!email || !password) {
       setError("Enter your email and password to continue.");
       return;
     }
-    setError("Account sign-in will be available in the next phase.");
+
+    setPending(true);
+    setError("");
+    try {
+      await login({ email, password });
+      const next = location.state?.from && location.state.from !== "/login" ? location.state.from : "/";
+      navigate(next, { replace: true });
+    } catch (err) {
+      setError(getErrorMessage(err, "Unable to sign in with those details."));
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -55,8 +73,8 @@ export default function LoginPage() {
             {error}
           </p>
         ) : null}
-        <button className="btn btn-primary mt-2" type="submit">
-          Sign in
+        <button className="btn btn-primary mt-2" type="submit" disabled={pending}>
+          {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>
     </AuthLayout>

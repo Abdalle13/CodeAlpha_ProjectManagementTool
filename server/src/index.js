@@ -16,7 +16,7 @@ async function start() {
     });
   } catch (error) {
     console.error("Failed to start Taskora API.");
-    if (!isProduction) {
+    if (!isProduction()) {
       console.error(error);
     }
     process.exit(1);

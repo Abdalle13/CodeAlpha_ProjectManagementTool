@@ -1,25 +1,28 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import { ThemeProvider } from "../context/ThemeContext.jsx";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderApp } from "../test/render.jsx";
 import LoginPage from "./LoginPage.jsx";
 
-function renderLogin() {
-  return render(
-    <MemoryRouter>
-      <ThemeProvider>
-        <LoginPage />
-      </ThemeProvider>
-    </MemoryRouter>,
-  );
-}
+vi.mock("../lib/api.js", () => ({
+  getCurrentUser: vi.fn().mockRejectedValue(new Error("unauthenticated")),
+  loginAccount: vi.fn(),
+  registerAccount: vi.fn(),
+  logoutAccount: vi.fn(),
+  getHealth: vi.fn(),
+  getErrorMessage: (error, fallback) => error?.response?.data?.error?.message || fallback,
+}));
 
 describe("LoginPage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("shows Taskora branding and validates empty credentials", async () => {
     const user = userEvent.setup();
-    renderLogin();
+    renderApp(<LoginPage />);
 
-    expect(screen.getByRole("heading", { name: /sign in to taskora/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /sign in to taskora/i })).toBeInTheDocument();
     expect(screen.getByText(/plan projects\. manage tasks\. work together\./i)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /sign in/i }));

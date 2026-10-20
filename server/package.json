@@ -4,22 +4,26 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/index.js",
+    "dev": "node --watch-path=./src src/index.js",
     "start": "node src/index.js",
     "test": "node --test --test-reporter=spec \"tests/**/*.test.js\"",
     "lint": "eslint src tests"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.7.1",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.19.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "eslint": "^9.36.0",
+    "mongodb-memory-server": "^11.3.0",
     "supertest": "^7.1.4"
   }
 }

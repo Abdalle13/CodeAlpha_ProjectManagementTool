@@ -9,7 +9,7 @@ export async function connectDatabase() {
   mongoose.set("strictQuery", true);
 
   await mongoose.connect(env.mongodbUri, {
-    serverSelectionTimeoutMS: isTest ? 2000 : 8000,
+    serverSelectionTimeoutMS: isTest() ? 2000 : 8000,
   });
 
   return { connected: true };

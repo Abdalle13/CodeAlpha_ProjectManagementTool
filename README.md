@@ -6,11 +6,11 @@ Taskora is a full-stack project management workspace for teams that need a clear
 
 ## Current status
 
-Phase 1 is in place: application structure, Taskora branding, light and dark themes, routing, Express API health checks, and local development tooling. Authentication, projects, tasks, comments, activity, and deployment configuration follow in later phases.
+Authentication is in place: registration, login, HttpOnly JWT cookies, protected application routes, and current-user retrieval. Projects, tasks, comments, activity, dashboard metrics, and deployment configuration follow in later phases.
 
 ## Features (planned and in progress)
 
-- Account registration, login, and protected routes
+- Account registration, login, logout, and protected routes
 - Projects, membership, and permission checks
 - Task boards with persisted status changes
 - Comments and activity history
@@ -21,7 +21,7 @@ Phase 1 is in place: application structure, Taskora branding, light and dark the
 
 - Frontend: React, Vite, JavaScript, Tailwind CSS, React Router, Axios
 - Backend: Node.js, Express.js, MongoDB, Mongoose
-- Auth: JWT in HttpOnly cookies (implemented in the authentication phase)
+- Auth: JWT stored in an HttpOnly cookie (`taskora_token`), not in `localStorage`
 - Tests: Vitest, React Testing Library, Node.js test runner, Supertest
 
 ## Screenshots
@@ -67,6 +67,8 @@ npm test
 npm run lint
 npm run build
 ```
+
+Backend authentication tests use a dedicated local database at `mongodb://127.0.0.1:27017/taskora_test` and drop that database after the suite finishes. Keep MongoDB running locally before `npm test`.
 
 ## Deployment
 

@@ -11,14 +11,36 @@ function readEnv(name, fallback = "") {
 }
 
 export const env = {
-  nodeEnv: readEnv("NODE_ENV", "development"),
-  port: Number(readEnv("PORT", "5000")),
-  clientOrigin: readEnv("CLIENT_ORIGIN", "http://localhost:5173"),
-  mongodbUri: readEnv("MONGODB_URI", ""),
-  jwtSecret: readEnv("JWT_SECRET", ""),
-  jwtExpiresIn: readEnv("JWT_EXPIRES_IN", "7d"),
-  cookieSecure: readEnv("COOKIE_SECURE", "false") === "true",
+  get nodeEnv() {
+    return readEnv("NODE_ENV", "development");
+  },
+  get port() {
+    return Number(readEnv("PORT", "5000"));
+  },
+  get clientOrigin() {
+    return readEnv("CLIENT_ORIGIN", "http://localhost:5173");
+  },
+  get mongodbUri() {
+    return readEnv("MONGODB_URI", "");
+  },
+  get jwtSecret() {
+    return readEnv("JWT_SECRET", "");
+  },
+  get jwtExpiresIn() {
+    return readEnv("JWT_EXPIRES_IN", "7d");
+  },
+  get cookieSecure() {
+    return readEnv("COOKIE_SECURE", "false") === "true";
+  },
+  get authCookieName() {
+    return readEnv("AUTH_COOKIE_NAME", "taskora_token");
+  },
 };
 
-export const isProduction = env.nodeEnv === "production";
-export const isTest = env.nodeEnv === "test";
+export function isProduction() {
+  return env.nodeEnv === "production";
+}
+
+export function isTest() {
+  return env.nodeEnv === "test";
+}

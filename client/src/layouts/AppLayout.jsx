@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import BrandMark from "../components/BrandMark.jsx";
 import ThemeToggle from "../components/ThemeToggle.jsx";
 import ApiStatus from "../components/ApiStatus.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const links = [
   { to: "/", label: "Dashboard" },
@@ -20,6 +21,7 @@ function navClass({ isActive }) {
 
 export default function AppLayout() {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-[var(--bg)] lg:grid lg:grid-cols-[16.5rem_1fr]">
@@ -41,7 +43,11 @@ export default function AppLayout() {
           ))}
         </nav>
         <div className="mt-8 border-t border-[var(--line)] pt-4">
-          <ApiStatus />
+          <p className="truncate text-sm font-medium">{user?.name}</p>
+          <p className="truncate text-sm text-[var(--muted)]">{user?.email}</p>
+          <div className="mt-3">
+            <ApiStatus />
+          </div>
         </div>
       </aside>
 
