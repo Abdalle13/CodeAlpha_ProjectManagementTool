@@ -1,0 +1,180 @@
+@import "tailwindcss";
+@import "@fontsource/manrope/500.css";
+@import "@fontsource/manrope/600.css";
+@import "@fontsource/manrope/700.css";
+@import "@fontsource/source-sans-3/400.css";
+@import "@fontsource/source-sans-3/500.css";
+@import "@fontsource/source-sans-3/600.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --bg: #f3efe6;
+  --bg-accent: #ece6d8;
+  --surface: #fffdf8;
+  --surface-muted: #f7f2e8;
+  --ink: #1b1915;
+  --muted: #5d584f;
+  --line: #ddd5c5;
+  --accent: #21584a;
+  --accent-hover: #184338;
+  --accent-soft: #d7ebe3;
+  --danger: #9f2d20;
+  --warning: #8a5a12;
+  --shadow: 0 14px 40px rgba(27, 25, 21, 0.08);
+  --ring: #21584a;
+  --sidebar: #f8f4ea;
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #121411;
+  --bg-accent: #171a16;
+  --surface: #1c1f1a;
+  --surface-muted: #232721;
+  --ink: #f3f0e8;
+  --muted: #c4bfb3;
+  --line: #32372f;
+  --accent: #7dcfb6;
+  --accent-hover: #95dcc6;
+  --accent-soft: #24342e;
+  --danger: #f0a39a;
+  --warning: #e3c07a;
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  --ring: #7dcfb6;
+  --sidebar: #161914;
+}
+
+@theme inline {
+  --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
+  --font-display: "Manrope", "Segoe UI", sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  letter-spacing: 0.01em;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 2vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.surface-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.6rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #f8fff9;
+}
+
+.dark .btn-primary {
+  color: #10231c;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: transparent;
+}
+
+.btn-ghost:hover,
+.btn-secondary:hover {
+  background: var(--surface-muted);
+}
+
+.input {
+  width: 100%;
+  min-height: 2.7rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.input:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
