@@ -4,6 +4,7 @@ import AppLayout from "./layouts/AppLayout.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import ProjectDetailPage from "./pages/ProjectDetailPage.jsx";
 import ProjectsPage from "./pages/ProjectsPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import TasksPage from "./pages/TasksPage.jsx";
@@ -19,6 +20,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

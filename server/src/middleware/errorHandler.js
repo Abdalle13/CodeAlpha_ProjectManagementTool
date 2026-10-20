@@ -11,6 +11,16 @@ export function errorHandler(err, _req, res, _next) {
     });
   }
 
+  if (err.name === "CastError") {
+    return res.status(400).json({
+      success: false,
+      error: {
+        message: "A submitted identifier was not valid.",
+        code: "VALIDATION_ERROR",
+      },
+    });
+  }
+
   if (err.type === "entity.parse.failed") {
     return res.status(400).json({
       success: false,

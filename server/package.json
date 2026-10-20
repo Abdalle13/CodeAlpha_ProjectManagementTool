@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --watch-path=./src src/index.js",
     "start": "node src/index.js",
-    "test": "node --test --test-reporter=spec \"tests/**/*.test.js\"",
+    "test": "node --test --test-concurrency=1 --test-reporter=spec \"tests/**/*.test.js\"",
     "lint": "eslint src tests"
   },
   "dependencies": {

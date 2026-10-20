@@ -35,4 +35,44 @@ export async function getCurrentUser() {
   return response.data;
 }
 
+export async function listProjects(params = {}) {
+  const response = await api.get("/projects", { params });
+  return response.data;
+}
+
+export async function createProject(payload) {
+  const response = await api.post("/projects", payload);
+  return response.data;
+}
+
+export async function getProject(id) {
+  const response = await api.get(`/projects/${id}`);
+  return response.data;
+}
+
+export async function updateProject(id, payload) {
+  const response = await api.patch(`/projects/${id}`, payload);
+  return response.data;
+}
+
+export async function deleteProject(id) {
+  const response = await api.delete(`/projects/${id}`);
+  return response.data;
+}
+
+export async function addProjectMember(id, payload) {
+  const response = await api.post(`/projects/${id}/members`, payload);
+  return response.data;
+}
+
+export async function updateProjectMember(projectId, userId, payload) {
+  const response = await api.patch(`/projects/${projectId}/members/${userId}`, payload);
+  return response.data;
+}
+
+export async function removeProjectMember(projectId, userId) {
+  const response = await api.delete(`/projects/${projectId}/members/${userId}`);
+  return response.data;
+}
+
 export default api;

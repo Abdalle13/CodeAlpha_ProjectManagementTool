@@ -156,6 +156,15 @@ h3,
   background: var(--surface-muted);
 }
 
+.btn-danger {
+  background: var(--danger);
+  color: #fff8f6;
+}
+
+.dark .btn-danger {
+  color: #2a0f0c;
+}
+
 .input {
   width: 100%;
   min-height: 2.7rem;
@@ -177,4 +186,38 @@ h3,
   margin-bottom: 0.4rem;
   font-size: 0.92rem;
   font-weight: 600;
+}
+
+.textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(20, 18, 14, 0.46);
+}
+
+.dialog-panel {
+  width: min(34rem, 100%);
+  max-height: calc(100vh - 2.5rem);
+  overflow: auto;
+  padding: 1.4rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

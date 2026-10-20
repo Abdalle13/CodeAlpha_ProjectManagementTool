@@ -6,7 +6,7 @@ Taskora is a full-stack project management workspace for teams that need a clear
 
 ## Current status
 
-Authentication is in place: registration, login, HttpOnly JWT cookies, protected application routes, and current-user retrieval. Projects, tasks, comments, activity, dashboard metrics, and deployment configuration follow in later phases.
+Authentication and project management are in place: registration, login, HttpOnly JWT cookies, protected routes, project CRUD, membership, and access control. Tasks, comments, activity, dashboard metrics, and deployment configuration follow in later phases.
 
 ## Features (planned and in progress)
 
