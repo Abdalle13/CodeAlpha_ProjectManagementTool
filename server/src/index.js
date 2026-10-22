@@ -1,11 +1,12 @@
 import { createApp } from "./app.js";
-import { env, isProduction } from "./config/env.js";
+import { env, isProduction, validateProductionEnv } from "./config/env.js";
 import { connectDatabase } from "./config/db.js";
 
 const app = createApp();
 
 async function start() {
   try {
+    if (isProduction()) validateProductionEnv();
     const db = await connectDatabase();
     if (!db.connected) {
       console.warn(`Database not connected: ${db.reason}`);

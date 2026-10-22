@@ -6,15 +6,16 @@ function mapUser(value) {
   return { id: String(value) };
 }
 
-export function publicProject(project, currentUserId) {
+export function publicProject(project, currentUserId, systemRole = "user") {
   const members = (project.members || []).map((member) => ({
     user: mapUser(member.user),
     role: member.role,
     joinedAt: member.joinedAt,
   }));
 
-  const myRole =
-    members.find((member) => member.user?.id === String(currentUserId))?.role || null;
+  const myRole = systemRole === "admin"
+    ? "admin"
+    : members.find((member) => member.user?.id === String(currentUserId))?.role || null;
 
   return {
     id: String(project._id || project.id),

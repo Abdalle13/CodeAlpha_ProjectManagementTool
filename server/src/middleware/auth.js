@@ -12,7 +12,7 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
 
   const payload = verifyAuthToken(token);
   const user = await User.findById(payload.sub);
-  if (!user) {
+  if (!user || !user.isActive) {
     throw new AppError("Please sign in to continue.", 401, "UNAUTHORIZED");
   }
 

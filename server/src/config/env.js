@@ -35,6 +35,12 @@ export const env = {
   get authCookieName() {
     return readEnv("AUTH_COOKIE_NAME", "taskora_token");
   },
+  get systemAdminEmail() {
+    return readEnv("SYSTEM_ADMIN_EMAIL", "").trim().toLowerCase();
+  },
+  get systemAdminBootstrapToken() {
+    return readEnv("SYSTEM_ADMIN_BOOTSTRAP_TOKEN", "");
+  },
 };
 
 export function isProduction() {
@@ -43,4 +49,16 @@ export function isProduction() {
 
 export function isTest() {
   return env.nodeEnv === "test";
+}
+
+export function validateProductionEnv() {
+  const missing = [];
+  if (!env.mongodbUri) missing.push("MONGODB_URI");
+  if (env.jwtSecret.length < 32 || env.jwtSecret.startsWith("replace-with")) missing.push("JWT_SECRET (at least 32 characters)" );
+  if (!env.clientOrigin || !env.clientOrigin.startsWith("https://") || env.clientOrigin.includes("localhost")) {
+    missing.push("CLIENT_ORIGIN (HTTPS deployed frontend origin)");
+  }
+  if (missing.length) {
+    throw new Error(`Production environment is incomplete: ${missing.join(", ")}`);
+  }
 }

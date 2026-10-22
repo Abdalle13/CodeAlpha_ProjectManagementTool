@@ -13,7 +13,8 @@
     "dev:server": "npm run dev -w server",
     "test": "npm run test -w server && npm run test -w client",
     "lint": "npm run lint -w server && npm run lint -w client",
-    "build": "npm run build -w client"
+    "build": "npm run build -w client",
+    "seed": "npm run seed -w server"
   },
   "engines": {
     "node": ">=20"

@@ -1,3 +1,10 @@
+import dns from 'node:dns';
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch {
+  // fallback to system default
+}
+
 import mongoose from "mongoose";
 import { env, isTest } from "./env.js";
 

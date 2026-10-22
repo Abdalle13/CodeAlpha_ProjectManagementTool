@@ -17,6 +17,8 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: 254,
     },
+    systemRole: { type: String, enum: ["user", "admin"], default: "user", required: true },
+    isActive: { type: Boolean, default: true, required: true },
     passwordHash: {
       type: String,
       required: true,

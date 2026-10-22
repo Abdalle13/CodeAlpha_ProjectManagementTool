@@ -17,6 +17,8 @@ export function publicUser(user) {
     id: String(user._id || user.id),
     name: user.name,
     email: user.email,
+    systemRole: user.systemRole || "user",
+    isActive: user.isActive !== false,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

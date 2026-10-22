@@ -22,6 +22,9 @@ function navClass({ isActive }) {
 export default function AppLayout() {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
+  const visibleLinks = user?.systemRole === "admin"
+    ? [...links, { to: "/admin", label: "Administration" }]
+    : links;
 
   return (
     <div className="min-h-screen bg-[var(--bg)] lg:grid lg:grid-cols-[16.5rem_1fr]">
@@ -36,7 +39,7 @@ export default function AppLayout() {
       >
         <BrandMark />
         <nav className="mt-8 grid gap-1" aria-label="Main">
-          {links.map((link) => (
+          {visibleLinks.map((link) => (
             <NavLink key={link.to} to={link.to} className={navClass} end={link.to === "/"} onClick={() => setOpen(false)}>
               {link.label}
             </NavLink>

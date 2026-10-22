@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "node --watch-path=./src src/index.js",
     "start": "node src/index.js",
-    "test": "node --test --test-concurrency=1 --test-reporter=spec \"tests/**/*.test.js\"",
-    "lint": "eslint src tests"
+    "test": "node --test --test-concurrency=1 --test-reporter=spec tests/all.test.js",
+    "lint": "eslint src tests",
+    "seed": "node src/seed.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -55,7 +55,7 @@ export const login = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email }).select("+passwordHash");
   const matches = user ? await bcrypt.compare(password, user.passwordHash) : false;
-  if (!user || !matches) {
+  if (!user || !user.isActive || !matches) {
     throw new AppError("Invalid email or password.", 401, "UNAUTHORIZED");
   }
 

@@ -39,3 +39,11 @@ export function GuestRoute() {
 
   return <Outlet />;
 }
+
+export function SystemAdminRoute() {
+  const { user, status } = useAuth();
+
+  if (status === "loading") return <LoadingScreen />;
+  if (!user || user.systemRole !== "admin") return <Navigate to="/" replace />;
+  return <Outlet />;
+}

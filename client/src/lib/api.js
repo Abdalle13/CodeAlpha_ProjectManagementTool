@@ -35,6 +35,11 @@ export async function getCurrentUser() {
   return response.data;
 }
 
+export async function getDashboard() {
+  const response = await api.get("/dashboard");
+  return response.data;
+}
+
 export async function listProjects(params = {}) {
   const response = await api.get("/projects", { params });
   return response.data;
@@ -72,6 +77,71 @@ export async function updateProjectMember(projectId, userId, payload) {
 
 export async function removeProjectMember(projectId, userId) {
   const response = await api.delete(`/projects/${projectId}/members/${userId}`);
+  return response.data;
+}
+
+export async function listProjectTasks(projectId, params = {}) {
+  const response = await api.get(`/projects/${projectId}/tasks`, { params });
+  return response.data;
+}
+
+export async function listTasks(params = {}) {
+  const response = await api.get("/tasks", { params });
+  return response.data;
+}
+
+export async function createProjectTask(projectId, payload) {
+  const response = await api.post(`/projects/${projectId}/tasks`, payload);
+  return response.data;
+}
+
+export async function updateProjectTask(projectId, taskId, payload) {
+  const response = await api.patch(`/projects/${projectId}/tasks/${taskId}`, payload);
+  return response.data;
+}
+
+export async function deleteProjectTask(projectId, taskId) {
+  const response = await api.delete(`/projects/${projectId}/tasks/${taskId}`);
+  return response.data;
+}
+
+export async function listProjectActivity(projectId, params = {}) {
+  const response = await api.get(`/projects/${projectId}/activity`, { params });
+  return response.data;
+}
+
+export async function listTaskComments(projectId, taskId, params = {}) {
+  const response = await api.get(`/projects/${projectId}/tasks/${taskId}/comments`, { params });
+  return response.data;
+}
+
+export async function createTaskComment(projectId, taskId, payload) {
+  const response = await api.post(`/projects/${projectId}/tasks/${taskId}/comments`, payload);
+  return response.data;
+}
+
+export async function listAdminUsers(params = {}) {
+  const response = await api.get("/admin/users", { params });
+  return response.data;
+}
+
+export async function bootstrapSystemAdmin(token) {
+  const response = await api.post("/admin/bootstrap", { token });
+  return response.data;
+}
+
+export async function updateAdminUser(userId, payload) {
+  const response = await api.patch(`/admin/users/${userId}`, payload);
+  return response.data;
+}
+
+export async function listAdminProjects(params = {}) {
+  const response = await api.get("/admin/projects", { params });
+  return response.data;
+}
+
+export async function deleteAdminProject(projectId) {
+  const response = await api.delete(`/admin/projects/${projectId}`);
   return response.data;
 }
 

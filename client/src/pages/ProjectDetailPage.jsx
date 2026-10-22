@@ -7,6 +7,7 @@ import {
   deleteProject,
   getErrorMessage,
   getProject,
+  listProjectActivity,
   removeProjectMember,
   updateProject,
   updateProjectMember,
@@ -25,13 +26,22 @@ export default function ProjectDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
   const [memberRole, setMemberRole] = useState("member");
+  const [activity, setActivity] = useState([]);
+  const [activityError, setActivityError] = useState("");
 
   async function load() {
     setLoading(true);
     setError("");
+    setActivityError("");
     try {
       const payload = await getProject(id);
       setProject(payload.data.project);
+      try {
+        const activityPayload = await listProjectActivity(id, { limit: 20 });
+        setActivity(activityPayload.data.items);
+      } catch (err) {
+        setActivityError(getErrorMessage(err, "Unable to load project activity."));
+      }
     } catch (err) {
       setError(getErrorMessage(err, "Unable to load this project."));
       setProject(null);
@@ -296,10 +306,29 @@ export default function ProjectDetailPage() {
         ) : null}
       </div>
 
+      <section className="mt-8 border-t border-[var(--line)] pt-6" aria-labelledby="project-activity-heading">
+        <h2 id="project-activity-heading" className="font-display text-lg font-semibold">Activity</h2>
+        {activityError ? <p className="mt-3 text-sm text-[var(--danger)]" role="alert">{activityError}</p> : null}
+        {activity.length ? (
+          <ol className="mt-4 grid gap-4">
+            {activity.map((item) => (
+              <li key={item.id} className="flex flex-col gap-1 border-l-2 border-[var(--line)] pl-4 sm:flex-row sm:items-baseline sm:justify-between">
+                <p><span className="font-medium">{item.actor.name}</span> {item.summary}</p>
+                <time className="shrink-0 text-sm text-[var(--muted)]" dateTime={item.createdAt}>
+                  {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.createdAt))}
+                </time>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mt-3 text-sm text-[var(--muted)]">No activity has been recorded yet.</p>
+        )}
+      </section>
+
       {confirmDelete ? (
         <ConfirmDialog
           title="Delete this project?"
-          message="This permanently removes the project. Tasks and comments will also be unavailable once those features are connected."
+          message="This permanently removes the project, its tasks, comments, and activity history."
           confirmLabel="Delete project"
           danger
           pending={pending}

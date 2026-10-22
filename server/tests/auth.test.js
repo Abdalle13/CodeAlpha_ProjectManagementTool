@@ -1,27 +1,21 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import request from "supertest";
-import mongoose from "mongoose";
-import { connectDatabase, disconnectDatabase } from "../src/config/db.js";
 import { createApp } from "../src/app.js";
+import { startTestDatabase, stopTestDatabase } from "./helpers/database.js";
 
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET = "taskora-test-secret-value";
-process.env.MONGODB_URI = "mongodb://127.0.0.1:27017/taskora_test";
 
 const app = createApp();
 
 describe("authentication", () => {
   before(async () => {
-    await connectDatabase();
-    await mongoose.connection.dropDatabase();
+    await startTestDatabase();
   });
 
   after(async () => {
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.dropDatabase();
-    }
-    await disconnectDatabase();
+    await stopTestDatabase();
   });
 
   const uniqueEmail = () => `ada-${Date.now()}-${Math.random().toString(16).slice(2)}@taskora.test`;
@@ -75,6 +69,15 @@ describe("authentication", () => {
       password: "correcthorse",
     });
     assert.equal(invalidEmail.status, 400);
+  });
+
+  it("rejects state-changing requests from an unconfigured origin", async () => {
+    const response = await request(app)
+      .post("/api/auth/login")
+      .set("Origin", "https://untrusted.example")
+      .send({ email: "person@taskora.test", password: "correcthorse" });
+    assert.equal(response.status, 403);
+    assert.equal(response.body.error.code, "FORBIDDEN");
   });
 
   it("logs in with valid credentials and rejects invalid ones", async () => {

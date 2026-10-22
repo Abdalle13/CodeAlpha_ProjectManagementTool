@@ -13,7 +13,8 @@ export const loadAccessibleProject = asyncHandler(async (req, _res, next) => {
     .populate("owner", "name email")
     .populate("members.user", "name email");
 
-  const membership = project?.members.find((member) => member.user?._id?.equals(req.user._id));
+  const membership = project?.members.find((member) => member.user?._id?.equals(req.user._id)) ||
+    (project && req.user.systemRole === "admin" ? { user: req.user, role: "admin" } : null);
   if (!project || !membership) {
     throw new AppError("Project not found.", 404, "NOT_FOUND");
   }
