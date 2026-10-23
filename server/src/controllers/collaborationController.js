@@ -99,15 +99,15 @@ export const getDashboard = asyncHandler(async (req, res) => {
 
   const [inProgress, completed, assigned, overdue, upcoming, statusCounts, dueSoonTasks] = await Promise.all([
     Task.countDocuments({ ...accessibleTaskFilter, status: "in_progress" }),
-    Task.countDocuments({ ...accessibleTaskFilter, status: "done" }),
-    Task.countDocuments({ ...accessibleTaskFilter, assignee: req.user._id, status: { $ne: "done" } }),
-    Task.countDocuments({ ...accessibleTaskFilter, dueDate: { $lt: today }, status: { $ne: "done" } }),
-    Task.countDocuments({ ...accessibleTaskFilter, dueDate: { $gte: today, $lte: nextWeek }, status: { $ne: "done" } }),
+    Task.countDocuments({ ...accessibleTaskFilter, status: { $in: ["done", "completed"] } }),
+    Task.countDocuments({ ...accessibleTaskFilter, assignee: req.user._id, status: { $nin: ["done", "completed"] } }),
+    Task.countDocuments({ ...accessibleTaskFilter, dueDate: { $lt: today }, status: { $nin: ["done", "completed"] } }),
+    Task.countDocuments({ ...accessibleTaskFilter, dueDate: { $gte: today, $lte: nextWeek }, status: { $nin: ["done", "completed"] } }),
     Task.aggregate([
       { $match: accessibleTaskFilter },
       { $group: { _id: "$status", count: { $sum: 1 } } },
     ]),
-    Task.find({ ...accessibleTaskFilter, dueDate: { $ne: null }, status: { $ne: "done" } })
+    Task.find({ ...accessibleTaskFilter, dueDate: { $ne: null }, status: { $nin: ["done", "completed"] } })
       .sort({ dueDate: 1 })
       .limit(8)
       .populate("project", "name")

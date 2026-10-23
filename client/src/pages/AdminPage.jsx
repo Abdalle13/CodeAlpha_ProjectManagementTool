@@ -1,224 +1,200 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  deleteAdminProject,
-  getErrorMessage,
-  listAdminProjects,
-  listAdminUsers,
-  updateAdminUser,
-} from "../lib/api.js";
+import { deleteAdminProject, getErrorMessage, listAdminProjects, listAdminUsers, updateAdminUser } from "../lib/api.js";
 import { formatDate } from "../lib/projects.js";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
+
+const ROLE_BADGE = { admin: "badge-purple", user: "badge-gray" };
 
 export default function AdminPage() {
-  const [users, setUsers] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [userPagination, setUserPagination] = useState(null);
-  const [projectPagination, setProjectPagination] = useState(null);
-  const [userQuery, setUserQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [pendingId, setPendingId] = useState("");
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [users, setUsers]           = useState([]);
+  const [projects, setProjects]     = useState([]);
+  const [userPagination, setUP]     = useState(null);
+  const [projPagination, setPP]     = useState(null);
+  const [userQuery, setUserQuery]   = useState("");
+  const [loading, setLoading]       = useState(true);
+  const [pendingId, setPendingId]   = useState("");
+  const [error, setError]           = useState("");
+  const [notice, setNotice]         = useState("");
+  const [tab, setTab]               = useState("users");
+  const [confirm, setConfirm]       = useState(null);
 
-  const load = useCallback(async (userPage = 1, projectPage = 1, query = "") => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async (up = 1, pp = 1, q = "") => {
+    setLoading(true); setError("");
     try {
-      const [userPayload, projectPayload] = await Promise.all([
-        listAdminUsers({ limit: 20, page: userPage, q: query || undefined }),
-        listAdminProjects({ limit: 20, page: projectPage }),
+      const [ur, pr] = await Promise.all([
+        listAdminUsers({ limit: 20, page: up, q: q || undefined }),
+        listAdminProjects({ limit: 20, page: pp }),
       ]);
-      setUsers(userPayload.data.items);
-      setProjects(projectPayload.data.items);
-      setUserPagination(userPayload.data.pagination);
-      setProjectPagination(projectPayload.data.pagination);
-    } catch (err) {
-      setError(getErrorMessage(err, "Unable to load system administration data."));
-    } finally {
-      setLoading(false);
-    }
+      setUsers(ur.data.items); setProjects(pr.data.items);
+      setUP(ur.data.pagination); setPP(pr.data.pagination);
+    } catch (e) { setError(getErrorMessage(e, "Unable to load admin data.")); }
+    finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   async function handleUserUpdate(user, payload) {
     setPendingId(user.id);
-    setError("");
     try {
-      const response = await updateAdminUser(user.id, payload);
-      setUsers((current) => current.map((item) => item.id === user.id ? response.data.user : item));
-      setNotice(`${user.name}'s account was updated.`);
-    } catch (err) {
-      setError(getErrorMessage(err, "Unable to update this account."));
-    } finally {
-      setPendingId("");
-    }
+      const r = await updateAdminUser(user.id, payload);
+      setUsers(us => us.map(u => u.id === user.id ? r.data.user : u));
+      setNotice(user.name + " updated.");
+    } catch (e) { setError(getErrorMessage(e, "Unable to update account.")); }
+    finally { setPendingId(""); }
   }
 
-  async function handleProjectDelete(project) {
-    if (!window.confirm(`Delete project "${project.name}" and its tasks? This cannot be undone.`)) return;
-    setPendingId(project.id);
-    setError("");
+  async function deleteProject(project) {
+    setPendingId(project.id); setConfirm(null);
     try {
       await deleteAdminProject(project.id);
-      setProjects((current) => current.filter((item) => item.id !== project.id));
-      setNotice(`${project.name} was deleted.`);
-    } catch (err) {
-      setError(getErrorMessage(err, "Unable to delete this project."));
-    } finally {
-      setPendingId("");
-    }
+      setProjects(ps => ps.filter(p => p.id !== project.id));
+      setNotice(project.name + " deleted.");
+    } catch (e) { setError(getErrorMessage(e, "Unable to delete project.")); }
+    finally { setPendingId(""); }
   }
 
+  const TabBtn = ({ id, label }) => (
+    <button type="button" onClick={() => setTab(id)} style={{ padding: "0.5rem 1rem", background: "none", border: "none", cursor: "pointer", fontWeight: tab === id ? 600 : 400, color: tab === id ? "var(--ink)" : "var(--muted)", borderBottom: tab === id ? "2px solid var(--accent)" : "2px solid transparent", fontSize: "0.875rem", transition: "color 120ms" }}>{label}</button>
+  );
+
   return (
-    <section>
+    <section className="fade-in">
       <div>
-        <h1 className="page-title">System administration</h1>
-        <p className="mt-2 max-w-2xl text-[var(--muted)]">Manage Taskora accounts and projects across the system.</p>
+        <h1 className="page-title">Administration</h1>
+        <p style={{ marginTop: "0.35rem", color: "var(--muted)", fontSize: "0.875rem" }}>Manage accounts and projects across the platform.</p>
       </div>
 
-      {notice ? <p className="mt-4 text-sm text-[var(--accent)]" role="status">{notice}</p> : null}
-      {error ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
-      {loading ? <p className="mt-6 text-[var(--muted)]" role="status">Loading administration data…</p> : null}
+      {notice && <p role="status" style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--green)" }}>{notice}</p>}
+      {error  && <p role="alert"  style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--red)" }}>{error}</p>}
 
-      {!loading ? (
-        <>
-          <section className="mt-8" aria-labelledby="admin-users-heading">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 id="admin-users-heading" className="font-display text-xl font-semibold">Accounts</h2>
-              <p className="text-sm text-[var(--muted)]">{userPagination?.total ?? users.length} accounts</p>
-            </div>
-            <form
-              className="mt-3 flex flex-col gap-2 sm:flex-row"
-              onSubmit={(event) => {
-                event.preventDefault();
-                load(1, projectPagination?.page || 1, userQuery);
-              }}
-            >
-              <label className="sr-only" htmlFor="admin-user-search">Search accounts</label>
-              <input
-                id="admin-user-search"
-                className="input sm:max-w-sm"
-                value={userQuery}
-                onChange={(event) => setUserQuery(event.target.value)}
-                placeholder="Search name or email"
-              />
+      {/* Summary stats */}
+      {!loading && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(10rem, 1fr))", gap: "0.875rem", marginTop: "1.25rem" }}>
+          <div className="card" style={{ padding: "1rem" }}>
+            <p style={{ margin: "0 0 0.35rem", fontSize: "0.75rem", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total accounts</p>
+            <p style={{ margin: 0, fontSize: "1.875rem", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1 }}>{userPagination?.total ?? users.length}</p>
+          </div>
+          <div className="card" style={{ padding: "1rem" }}>
+            <p style={{ margin: "0 0 0.35rem", fontSize: "0.75rem", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total projects</p>
+            <p style={{ margin: 0, fontSize: "1.875rem", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1 }}>{projPagination?.total ?? projects.length}</p>
+          </div>
+          <div className="card" style={{ padding: "1rem" }}>
+            <p style={{ margin: "0 0 0.35rem", fontSize: "0.75rem", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Admins</p>
+            <p style={{ margin: 0, fontSize: "1.875rem", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1 }}>{users.filter(u => u.systemRole === "admin").length}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div style={{ display: "flex", borderBottom: "1px solid var(--border)", marginTop: "1.5rem" }}>
+        <TabBtn id="users" label="Accounts" />
+        <TabBtn id="projects" label="Projects" />
+      </div>
+
+      {loading ? (
+        <div style={{ marginTop: "1.25rem", display: "grid", gap: "0.5rem" }}>
+          {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: "2.5rem", borderRadius: 8 }} />)}
+        </div>
+      ) : tab === "users" ? (
+        <section aria-labelledby="admin-users-h" style={{ marginTop: "1.25rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap", marginBottom: "0.875rem" }}>
+            <h2 id="admin-users-h" className="section-title">Accounts <span style={{ fontWeight: 400, color: "var(--muted)" }}>({userPagination?.total ?? users.length})</span></h2>
+            <form onSubmit={e => { e.preventDefault(); load(1, projPagination?.page || 1, userQuery); }} style={{ display: "flex", gap: "0.5rem" }}>
+              <input className="input" style={{ width: "15rem" }} value={userQuery} onChange={e => setUserQuery(e.target.value)} placeholder="Search name or email…" aria-label="Search accounts" />
               <button type="submit" className="btn btn-secondary">Search</button>
             </form>
-            {users.length ? (
-              <div className="mt-4 overflow-x-auto rounded-xl border border-[var(--line)]">
-                <table className="w-full min-w-[42rem] border-collapse text-left text-sm">
-                  <thead className="bg-[var(--surface-muted)] text-[var(--muted)]">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Name</th>
-                      <th className="px-4 py-3 font-medium">Email</th>
-                      <th className="px-4 py-3 font-medium">Role</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Joined</th>
-                      <th className="px-4 py-3 font-medium"><span className="sr-only">Account actions</span></th>
+          </div>
+          <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th style={{ textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.length === 0 ? (
+                    <tr><td colSpan={6} style={{ textAlign: "center", color: "var(--muted)", padding: "2rem" }}>No accounts found.</td></tr>
+                  ) : users.map(u => (
+                    <tr key={u.id}>
+                      <td style={{ fontWeight: 600, color: "var(--ink)" }}>{u.name}</td>
+                      <td>{u.email}</td>
+                      <td><span className={"badge " + (ROLE_BADGE[u.systemRole] || "badge-gray")}>{u.systemRole === "admin" ? "Admin" : "Member"}</span></td>
+                      <td><span className={"badge " + (u.isActive ? "badge-green" : "badge-red")}>{u.isActive ? "Active" : "Suspended"}</span></td>
+                      <td>{formatDate(u.createdAt)}</td>
+                      <td>
+                        <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end" }}>
+                          <button type="button" className="btn btn-secondary btn-sm" disabled={pendingId === u.id} onClick={() => handleUserUpdate(u, { systemRole: u.systemRole === "admin" ? "user" : "admin" })}>
+                            {u.systemRole === "admin" ? "Remove admin" : "Make admin"}
+                          </button>
+                          <button type="button" className={"btn btn-sm " + (u.isActive ? "btn-secondary" : "btn-success")} disabled={pendingId === u.id} onClick={() => handleUserUpdate(u, { isActive: !u.isActive })}>
+                            {u.isActive ? "Suspend" : "Reactivate"}
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user) => (
-                      <tr key={user.id} className="border-t border-[var(--line)]">
-                        <td className="px-4 py-3 font-medium">{user.name}</td>
-                        <td className="px-4 py-3">{user.email}</td>
-                        <td className="px-4 py-3 capitalize">{user.systemRole}</td>
-                        <td className="px-4 py-3">{user.isActive ? "Active" : "Suspended"}</td>
-                        <td className="px-4 py-3">{formatDate(user.createdAt)}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              className="btn btn-secondary min-h-9 px-2 py-1 text-sm"
-                              disabled={pendingId === user.id}
-                              onClick={() => handleUserUpdate(user, { systemRole: user.systemRole === "admin" ? "user" : "admin" })}
-                            >
-                              {user.systemRole === "admin" ? "Remove admin" : "Make admin"}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary min-h-9 px-2 py-1 text-sm"
-                              disabled={pendingId === user.id}
-                              onClick={() => handleUserUpdate(user, { isActive: !user.isActive })}
-                            >
-                              {user.isActive ? "Suspend" : "Reactivate"}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : <p className="surface-card mt-4 p-5 text-[var(--muted)]">No accounts found.</p>}
-            {userPagination?.pages > 1 ? (
-              <div className="mt-3 flex items-center justify-end gap-3">
-                <span className="text-sm text-[var(--muted)]">Page {userPagination.page} of {userPagination.pages}</span>
-                <button
-                  type="button"
-                  className="btn btn-secondary min-h-9 px-3 py-1 text-sm"
-                  disabled={userPagination.page <= 1 || loading}
-                  onClick={() => load(userPagination.page - 1, projectPagination?.page || 1, userQuery)}
-                >Previous accounts</button>
-                <button
-                  type="button"
-                  className="btn btn-secondary min-h-9 px-3 py-1 text-sm"
-                  disabled={userPagination.page >= userPagination.pages || loading}
-                  onClick={() => load(userPagination.page + 1, projectPagination?.page || 1, userQuery)}
-                >Next accounts</button>
-              </div>
-            ) : null}
-          </section>
-
-          <section className="mt-10" aria-labelledby="admin-projects-heading">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 id="admin-projects-heading" className="font-display text-xl font-semibold">Projects</h2>
-              <p className="text-sm text-[var(--muted)]">{projectPagination?.total ?? projects.length} projects</p>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            {projects.length ? (
-              <ul className="mt-4 grid gap-3">
-                {projects.map((project) => (
-                  <li key={project.id} className="surface-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{project.name}</p>
-                      <p className="mt-1 text-sm text-[var(--muted)]">
-                        Owner: {project.owner?.name || "Unknown"} · {project.members.length} members · {project.status}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-danger shrink-0"
-                      disabled={pendingId === project.id}
-                      onClick={() => handleProjectDelete(project)}
-                    >
-                      Delete project
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="surface-card mt-4 p-5 text-[var(--muted)]">No projects found.</p>}
-            {projectPagination?.pages > 1 ? (
-              <div className="mt-3 flex items-center justify-end gap-3">
-                <span className="text-sm text-[var(--muted)]">Page {projectPagination.page} of {projectPagination.pages}</span>
-                <button
-                  type="button"
-                  className="btn btn-secondary min-h-9 px-3 py-1 text-sm"
-                  disabled={projectPagination.page <= 1 || loading}
-                  onClick={() => load(userPagination?.page || 1, projectPagination.page - 1, userQuery)}
-                >Previous projects</button>
-                <button
-                  type="button"
-                  className="btn btn-secondary min-h-9 px-3 py-1 text-sm"
-                  disabled={projectPagination.page >= projectPagination.pages || loading}
-                  onClick={() => load(userPagination?.page || 1, projectPagination.page + 1, userQuery)}
-                >Next projects</button>
-              </div>
-            ) : null}
-          </section>
-        </>
-      ) : null}
+          </div>
+          {userPagination?.pages > 1 && (
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", alignItems: "center", marginTop: "0.75rem" }}>
+              <span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>Page {userPagination.page} of {userPagination.pages}</span>
+              <button type="button" className="btn btn-secondary btn-sm" disabled={userPagination.page <= 1 || loading} onClick={() => load(userPagination.page - 1, projPagination?.page || 1, userQuery)}>Previous</button>
+              <button type="button" className="btn btn-secondary btn-sm" disabled={userPagination.page >= userPagination.pages || loading} onClick={() => load(userPagination.page + 1, projPagination?.page || 1, userQuery)}>Next</button>
+            </div>
+          )}
+        </section>
+      ) : (
+        <section aria-labelledby="admin-proj-h" style={{ marginTop: "1.25rem" }}>
+          <h2 id="admin-proj-h" className="section-title" style={{ marginBottom: "0.875rem" }}>Projects <span style={{ fontWeight: 400, color: "var(--muted)" }}>({projPagination?.total ?? projects.length})</span></h2>
+          <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table className="data-table">
+                <thead>
+                  <tr><th>Name</th><th>Owner</th><th>Members</th><th>Status</th><th style={{ textAlign: "right" }}>Actions</th></tr>
+                </thead>
+                <tbody>
+                  {projects.length === 0 ? (
+                    <tr><td colSpan={5} style={{ textAlign: "center", color: "var(--muted)", padding: "2rem" }}>No projects found.</td></tr>
+                  ) : projects.map(p => (
+                    <tr key={p.id}>
+                      <td style={{ fontWeight: 600, color: "var(--ink)" }}>{p.name}</td>
+                      <td>{p.owner?.name || "—"}</td>
+                      <td>{p.members.length}</td>
+                      <td style={{ textTransform: "capitalize" }}>{p.status.replace("_", " ")}</td>
+                      <td>
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                          <button type="button" className="btn btn-danger btn-sm" disabled={pendingId === p.id} onClick={() => setConfirm({ project: p })}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {projPagination?.pages > 1 && (
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", alignItems: "center", marginTop: "0.75rem" }}>
+              <span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>Page {projPagination.page} of {projPagination.pages}</span>
+              <button type="button" className="btn btn-secondary btn-sm" disabled={projPagination.page <= 1 || loading} onClick={() => load(userPagination?.page || 1, projPagination.page - 1, userQuery)}>Previous</button>
+              <button type="button" className="btn btn-secondary btn-sm" disabled={projPagination.page >= projPagination.pages || loading} onClick={() => load(userPagination?.page || 1, projPagination.page + 1, userQuery)}>Next</button>
+            </div>
+          )}
+        </section>
+      )}
+
+      {confirm && (
+        <ConfirmDialog
+          title={"Delete project: " + confirm.project.name}
+          message="All tasks and data for this project will be permanently removed. This action cannot be undone."
+          confirmLabel="Delete project"
+          danger
+          onConfirm={() => deleteProject(confirm.project)}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
     </section>
   );
 }

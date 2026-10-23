@@ -17,17 +17,40 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: 254,
     },
-    systemRole: { type: String, enum: ["user", "admin"], default: "user", required: true },
-    isActive: { type: Boolean, default: true, required: true },
     passwordHash: {
       type: String,
       required: true,
       select: false,
     },
+    role: {
+      type: String,
+      enum: ["admin", "manager", "member"],
+      default: "member",
+      required: true,
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: "Engineering",
+    },
+    title: {
+      type: String,
+      trim: true,
+      default: "Software Engineer",
+    },
+    avatarColor: {
+      type: String,
+      default: "#3b82f6",
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+      required: true,
+    },
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 userSchema.set("toJSON", {

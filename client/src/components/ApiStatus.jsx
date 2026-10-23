@@ -1,41 +1,15 @@
 import { useEffect, useState } from "react";
 import { getHealth } from "../lib/api.js";
-
 export default function ApiStatus() {
-  const [state, setState] = useState({ status: "loading", label: "Checking API" });
-
+  const [ok, setOk] = useState(null);
   useEffect(() => {
-    let active = true;
-
-    getHealth()
-      .then((payload) => {
-        if (!active) return;
-        const database = payload?.data?.database ?? "unknown";
-        setState({
-          status: "ok",
-          label: `API online · database ${database}`,
-        });
-      })
-      .catch(() => {
-        if (!active) return;
-        setState({ status: "error", label: "API unreachable" });
-      });
-
-    return () => {
-      active = false;
-    };
+    getHealth().then(() => setOk(true)).catch(() => setOk(false));
   }, []);
-
-  const tone =
-    state.status === "ok"
-      ? "text-[var(--accent)]"
-      : state.status === "error"
-        ? "text-[var(--danger)]"
-        : "text-[var(--muted)]";
-
+  if (ok === null) return null;
   return (
-    <p className={`text-sm ${tone}`} role="status">
-      {state.label}
-    </p>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "0.75rem", color: ok ? "var(--green)" : "var(--red)" }}>
+      <span style={{ width: 7, height: 7, borderRadius: "50%", background: ok ? "var(--green)" : "var(--red)", display: "inline-block" }} />
+      {ok ? "Connected" : "Offline"}
+    </span>
   );
 }

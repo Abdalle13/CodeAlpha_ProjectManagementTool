@@ -1,57 +1,45 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
 import { bootstrapSystemAdmin, getErrorMessage } from "../lib/api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function AdminSetupPage() {
-  const { user, refreshUser } = useAuth();
-  const navigate = useNavigate();
   const [token, setToken] = useState("");
-  const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+  const { refreshUser } = useAuth();
+  const navigate = useNavigate();
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setPending(true);
-    setError("");
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setPending(true); setError("");
     try {
       await bootstrapSystemAdmin(token);
       await refreshUser();
       navigate("/admin", { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err, "Unable to initialize system administration."));
+      setError(getErrorMessage(err, "Invalid or expired setup token."));
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <section className="mx-auto max-w-xl">
-      <h1 className="page-title">Initialize system admin</h1>
-      <p className="mt-2 text-[var(--muted)]">
-        Sign in with the account configured as the initial administrator, then enter the one-time token from the server environment.
-      </p>
-      <p className="mt-4 text-sm">Signed in as {user?.email}</p>
-      {error ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
-      <form className="surface-card mt-6 grid gap-4 p-5" onSubmit={handleSubmit}>
-        <div>
-          <label className="label" htmlFor="admin-bootstrap-token">One-time setup token</label>
-          <input
-            id="admin-bootstrap-token"
-            className="input"
-            type="password"
-            autoComplete="one-time-code"
-            value={token}
-            onChange={(event) => setToken(event.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <button className="btn btn-primary" type="submit" disabled={pending}>
-            {pending ? "Initializing…" : "Initialize admin access"}
+    <section style={{ maxWidth: "28rem", margin: "4rem auto", padding: "0 1rem" }}>
+      <div className="card-raised" style={{ padding: "2rem" }}>
+        <h1 style={{ margin: "0 0 0.5rem", fontSize: "1.25rem", fontWeight: 700 }}>System setup</h1>
+        <p style={{ margin: "0 0 1.5rem", color: "var(--muted)", fontSize: "0.875rem" }}>Enter the bootstrap token to claim admin access.</p>
+        <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1rem" }}>
+          <div>
+            <label className="label" htmlFor="setup-token">Bootstrap token</label>
+            <input id="setup-token" className="input" value={token} onChange={e => setToken(e.target.value)} placeholder="Paste token here" required />
+          </div>
+          {error && <p role="alert" style={{ margin: 0, color: "var(--red)", fontSize: "0.8125rem" }}>{error}</p>}
+          <button type="submit" className="btn btn-primary" disabled={pending} style={{ justifySelf: "flex-end" }}>
+            {pending ? "Verifying…" : "Claim admin access"}
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </section>
   );
 }

@@ -1,37 +1,12 @@
-export default function ConfirmDialog({
-  title,
-  message,
-  confirmLabel = "Confirm",
-  pending = false,
-  danger = false,
-  onConfirm,
-  onCancel,
-}) {
+export default function ConfirmDialog({ title, message, confirmLabel = "Confirm", onConfirm, onCancel, danger = false }) {
   return (
-    <div className="dialog-overlay" role="presentation" onClick={onCancel}>
-      <div
-        className="dialog-panel surface-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-title"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2 id="confirm-title" className="font-display text-xl font-semibold">
-          {title}
-        </h2>
-        <p className="mt-3 text-[var(--muted)]">{message}</p>
-        <div className="mt-6 flex flex-wrap justify-end gap-2">
-          <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={pending}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className={`btn ${danger ? "btn-danger" : "btn-primary"}`}
-            onClick={onConfirm}
-            disabled={pending}
-          >
-            {pending ? "Working…" : confirmLabel}
-          </button>
+    <div className="overlay" role="presentation" onClick={onCancel}>
+      <div className="modal" style={{ maxWidth: "26rem" }} role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={e => e.stopPropagation()}>
+        <h2 id="confirm-title" style={{ margin: "0 0 0.5rem", fontSize: "1rem", fontWeight: 700 }}>{title}</h2>
+        {message && <p style={{ margin: "0 0 1.5rem", color: "var(--muted)", fontSize: "0.875rem" }}>{message}</p>}
+        <div style={{ display: "flex", gap: "0.625rem", justifyContent: "flex-end" }}>
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+          <button type="button" className={"btn " + (danger ? "btn-danger" : "btn-primary")} onClick={onConfirm}>{confirmLabel}</button>
         </div>
       </div>
     </div>

@@ -1,111 +1,63 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthLayout from "../layouts/AuthLayout.jsx";
 import { getErrorMessage } from "../lib/api.js";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [email, setEmail] = useState("");
+  const navigate   = useNavigate();
+  const location   = useLocation();
+  const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const [error,    setError]    = useState("");
+  const [pending,  setPending]  = useState(false);
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (!email || !password) {
-      setError("Enter your email and password to continue.");
-      return;
-    }
-
-    setPending(true);
-    setError("");
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!email || !password) { setError("Enter your email and password."); return; }
+    setPending(true); setError("");
     try {
       await login({ email, password });
       const next = location.state?.from && location.state.from !== "/login" ? location.state.from : "/";
       navigate(next, { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err, "Unable to sign in with those details."));
+      setError(getErrorMessage(err, "Invalid credentials. Please try again."));
     } finally {
       setPending(false);
     }
   }
 
-  async function handleDemoLogin() {
-    setEmail("demo@taskora.io");
-    setPassword("Password123!");
-    setPending(true);
-    setError("");
+  async function handleDemo() {
+    setPending(true); setError("");
     try {
       await login({ email: "demo@taskora.io", password: "Password123!" });
       navigate("/", { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err, "Unable to sign in with demo account."));
+      setError(getErrorMessage(err, "Demo account unavailable."));
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <AuthLayout
-      title="Sign in to Taskora"
-      subtitle="Use your work email to open your projects and task boards."
-      switchText="Need an account?"
-      switchTo="/register"
-      switchLabel="Create one"
-    >
-      <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
+    <AuthLayout title="Sign in" subtitle="Access your projects and task boards." switchText="No account?" switchTo="/register" switchLabel="Create one">
+      <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: "0.875rem" }}>
         <div>
-          <label className="label" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            className="input"
-            type="email"
-            autoComplete="email"
-            placeholder="e.g. demo@taskora.io"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
+          <label className="label" htmlFor="email">Email address</label>
+          <input id="email" className="input input-lg" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
         </div>
         <div>
-          <label className="label" htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            className="input"
-            type="password"
-            autoComplete="current-password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
+          <label className="label" htmlFor="password">Password</label>
+          <input id="password" className="input input-lg" type="password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
         </div>
-        {error ? (
-          <p className="text-sm text-[var(--danger)]" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <button className="btn btn-primary mt-2" type="submit" disabled={pending}>
+        {error && <p role="alert" style={{ margin: 0, fontSize: "0.8125rem", color: "var(--red)" }}>{error}</p>}
+        <button type="submit" className="btn btn-primary btn-lg" style={{ width: "100%", marginTop: "0.25rem" }} disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
         </button>
-
-        <div className="pt-3 border-t border-[var(--border)] flex flex-col gap-2">
-          <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-            <span>Testing or reviewing?</span>
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">1-Click Demo</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            disabled={pending}
-            className="w-full py-2.5 px-3 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all flex items-center justify-center gap-1.5 shadow-sm"
-          >
-            <span>⚡ Instant Demo Login (Lead Dev)</span>
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: "0.875rem", marginTop: "0.25rem" }}>
+          <button type="button" onClick={handleDemo} disabled={pending} className="btn btn-secondary" style={{ width: "100%", fontSize: "0.8125rem" }}>
+            Continue with demo account
           </button>
         </div>
       </form>

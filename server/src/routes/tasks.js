@@ -1,9 +1,13 @@
 import { Router } from "express";
 import {
-  createProjectTask,
-  deleteProjectTask,
+  createTask,
+  deleteTask,
+  getTask,
   listProjectTasks,
-  updateProjectTask,
+  updateTask,
+  updateTaskStatus,
+  addChecklistItem,
+  toggleChecklistItem,
 } from "../controllers/taskController.js";
 import { requireAuth } from "../middleware/auth.js";
 import { loadAccessibleProject } from "../middleware/projectAccess.js";
@@ -11,9 +15,14 @@ import { loadAccessibleProject } from "../middleware/projectAccess.js";
 const router = Router({ mergeParams: true });
 
 router.use(requireAuth, loadAccessibleProject);
+
 router.get("/", listProjectTasks);
-router.post("/", createProjectTask);
-router.patch("/:taskId", updateProjectTask);
-router.delete("/:taskId", deleteProjectTask);
+router.post("/", createTask);
+router.get("/:taskId", getTask);
+router.patch("/:taskId", updateTask);
+router.patch("/:taskId/status", updateTaskStatus);
+router.post("/:taskId/checklist", addChecklistItem);
+router.patch("/:taskId/checklist/:itemId", toggleChecklistItem);
+router.delete("/:taskId", deleteTask);
 
 export default router;

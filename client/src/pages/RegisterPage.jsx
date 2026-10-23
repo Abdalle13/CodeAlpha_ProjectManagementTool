@@ -6,86 +6,44 @@ import { getErrorMessage } from "../lib/api.js";
 
 export default function RegisterPage() {
   const { register } = useAuth();
-  const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate     = useNavigate();
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (!name || !email || password.length < 8) {
-      setError("Enter your name, email, and a password of at least 8 characters.");
-      return;
-    }
-
-    setPending(true);
-    setError("");
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.password) { setError("All fields are required."); return; }
+    if (form.password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    setPending(true); setError("");
     try {
-      await register({ name, email, password });
+      await register(form);
       navigate("/", { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err, "Unable to create this account."));
+      setError(getErrorMessage(err, "Unable to create your account."));
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <AuthLayout
-      title="Create your Taskora account"
-      subtitle="Set up a workspace account to start planning projects with your team."
-      switchText="Already have an account?"
-      switchTo="/login"
-      switchLabel="Sign in"
-    >
-      <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
+    <AuthLayout title="Create account" subtitle="Get started with Taskora." switchText="Already have an account?" switchTo="/login" switchLabel="Sign in">
+      <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: "0.875rem" }}>
         <div>
-          <label className="label" htmlFor="name">
-            Full name
-          </label>
-          <input
-            id="name"
-            className="input"
-            type="text"
-            autoComplete="name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
+          <label className="label" htmlFor="reg-name">Full name</label>
+          <input id="reg-name" className="input input-lg" autoComplete="name" placeholder="Jane Smith" value={form.name} onChange={set("name")} required />
         </div>
         <div>
-          <label className="label" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            className="input"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
+          <label className="label" htmlFor="reg-email">Email address</label>
+          <input id="reg-email" className="input input-lg" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={set("email")} required />
         </div>
         <div>
-          <label className="label" htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            className="input"
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
+          <label className="label" htmlFor="reg-pass">Password</label>
+          <input id="reg-pass" className="input input-lg" type="password" autoComplete="new-password" placeholder="At least 8 characters" value={form.password} onChange={set("password")} required minLength={8} />
         </div>
-        {error ? (
-          <p className="text-sm text-[var(--danger)]" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <button className="btn btn-primary mt-2" type="submit" disabled={pending}>
+        {error && <p role="alert" style={{ margin: 0, fontSize: "0.8125rem", color: "var(--red)" }}>{error}</p>}
+        <button type="submit" className="btn btn-primary btn-lg" style={{ width: "100%", marginTop: "0.25rem" }} disabled={pending}>
           {pending ? "Creating account…" : "Create account"}
         </button>
       </form>

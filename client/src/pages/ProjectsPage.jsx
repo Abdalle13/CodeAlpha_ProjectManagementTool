@@ -1,191 +1,129 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ProjectForm from "../components/ProjectForm.jsx";
-import { createProject, getErrorMessage, listProjects } from "../lib/api.js";
-import { PROJECT_STATUSES, formatDate, statusLabel } from "../lib/projects.js";
+import { createProject, getErrorMessage, listProjects, updateProject } from "../lib/api.js";
+import { formatDate } from "../lib/projects.js";
+import { useAuth } from "../context/AuthContext.jsx";
+
+const STATUS_LABEL = { planning: "Planning", active: "Active", on_hold: "On Hold", completed: "Completed", cancelled: "Cancelled" };
+const STATUS_BADGE = { planning: "badge-gray", active: "badge-blue", on_hold: "badge-yellow", completed: "badge-green", cancelled: "badge-red" };
+
+function ProjectCard({ project }) {
+  return (
+    <Link to={"/projects/" + project.id} style={{ textDecoration: "none", display: "block" }}>
+      <div className="card" style={{ padding: "1.25rem", transition: "box-shadow 120ms, border-color 120ms", cursor: "pointer" }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--shadow)"; e.currentTarget.style.borderColor = "var(--border2)"; }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = "var(--shadow-sm)"; e.currentTarget.style.borderColor = "var(--border)"; }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem", marginBottom: "0.625rem" }}>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: "0.9375rem", color: "var(--ink)", lineHeight: 1.3 }}>{project.name}</p>
+          <span className={"badge " + (STATUS_BADGE[project.status] || "badge-gray")} style={{ flexShrink: 0 }}>{STATUS_LABEL[project.status] || project.status}</span>
+        </div>
+        {project.description && <p style={{ margin: "0 0 0.75rem", fontSize: "0.8125rem", color: "var(--muted)", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{project.description}</p>}
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", fontSize: "0.775rem", color: "var(--muted)" }}>
+          <span>{project.members.length} member{project.members.length !== 1 ? "s" : ""}</span>
+          {project.dueDate && <span>Due {formatDate(project.dueDate)}</span>}
+          <span style={{ marginLeft: "auto", textTransform: "capitalize", fontWeight: 500, color: "var(--accent-text)" }}>{project.myRole}</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function ProjectsPage() {
-  const [items, setItems] = useState([]);
+  const [items, setItems]           = useState([]);
   const [pagination, setPagination] = useState(null);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [pending, setPending] = useState(false);
+  const [query, setQuery]           = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState("");
+  const [notice, setNotice]         = useState("");
+  const [creating, setCreating]     = useState(false);
+  const [pending, setPending]       = useState(false);
 
-  async function load(nextQuery = query, nextStatus = status) {
-    setLoading(true);
-    setError("");
+  async function load(q = query, st = statusFilter) {
+    setLoading(true); setError("");
     try {
-      const payload = await listProjects({
-        q: nextQuery || undefined,
-        status: nextStatus || undefined,
-      });
-      setItems(payload.data.items);
-      setPagination(payload.data.pagination);
-    } catch (err) {
-      setError(getErrorMessage(err, "Unable to load projects."));
-    } finally {
-      setLoading(false);
-    }
+      const r = await listProjects({ q: q || undefined, status: st || undefined });
+      setItems(r.data.items); setPagination(r.data.pagination);
+    } catch (e) { setError(getErrorMessage(e, "Unable to load projects.")); }
+    finally { setLoading(false); }
   }
 
-  useEffect(() => {
-    load();
-    // Load once on mount; search/filter trigger load explicitly.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function handleSearch(event) {
-    event.preventDefault();
-    await load(query, status);
-  }
+  useEffect(() => { load(); }, []);
 
   async function handleCreate(values) {
-    setPending(true);
-    setError("");
+    setPending(true); setError("");
     try {
       await createProject(values);
-      setCreating(false);
-      setNotice("Project created.");
+      setCreating(false); setNotice("Project created.");
       await load();
-    } catch (err) {
-      setError(getErrorMessage(err, "Unable to create this project."));
-    } finally {
-      setPending(false);
-    }
+    } catch (e) { setError(getErrorMessage(e, "Unable to create project.")); }
+    finally { setPending(false); }
   }
 
+  function handleStatusChange(e) { setStatusFilter(e.target.value); load(query, e.target.value); }
+  function handleSearch(e) { e.preventDefault(); load(query, statusFilter); }
+
   return (
-    <section>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <section className="fade-in">
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
         <div>
           <h1 className="page-title">Projects</h1>
-          <p className="mt-2 max-w-2xl text-[var(--muted)]">
-            Create and browse the workspaces you belong to. Open a project to edit details or manage members.
-          </p>
+          <p style={{ marginTop: "0.35rem", color: "var(--muted)", fontSize: "0.875rem" }}>Manage and browse your workspaces.</p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>
-          New project
-        </button>
+        <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>New project</button>
       </div>
 
-      <form className="mt-6 flex flex-col gap-3 sm:flex-row" onSubmit={handleSearch}>
-        <div className="flex-1">
-          <label className="label" htmlFor="project-search">
-            Search
-          </label>
-          <input
-            id="project-search"
-            className="input"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by name"
-          />
+      {/* Filters */}
+      <form onSubmit={handleSearch} style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", marginTop: "1.25rem", alignItems: "flex-end" }}>
+        <div style={{ flex: 1, minWidth: "10rem" }}>
+          <label className="label" htmlFor="proj-search">Search</label>
+          <input id="proj-search" className="input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search projects…" />
         </div>
-        <div className="sm:w-48">
-          <label className="label" htmlFor="project-filter">
-            Status
-          </label>
-          <select
-            id="project-filter"
-            className="input"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
+        <div style={{ width: "11rem" }}>
+          <label className="label" htmlFor="proj-status">Status</label>
+          <select id="proj-status" className="input" value={statusFilter} onChange={handleStatusChange}>
             <option value="">All statuses</option>
-            {PROJECT_STATUSES.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
+            {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
-        <div className="flex items-end">
-          <button type="submit" className="btn btn-secondary w-full sm:w-auto">
-            Filter
-          </button>
-        </div>
+        <button type="submit" className="btn btn-secondary">Search</button>
       </form>
 
-      {notice ? (
-        <p className="mt-4 text-sm text-[var(--accent)]" role="status">
-          {notice}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="mt-4 text-sm text-[var(--danger)]" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {notice && <p role="status" style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--green)" }}>{notice}</p>}
+      {error  && <p role="alert"  style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--red)" }}>{error}</p>}
 
-      {creating ? (
-        <div className="dialog-overlay" role="presentation" onClick={() => !pending && setCreating(false)}>
-          <div
-            className="dialog-panel surface-card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-project-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 id="create-project-title" className="font-display text-xl font-semibold">
-              New project
-            </h2>
-            <div className="mt-5">
-              <ProjectForm
-                submitLabel="Create project"
-                pending={pending}
-                onSubmit={handleCreate}
-                onCancel={() => setCreating(false)}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {pagination && <p style={{ marginTop: "0.625rem", fontSize: "0.775rem", color: "var(--muted)" }}>{pagination.total} project{pagination.total !== 1 ? "s" : ""}</p>}
 
       {loading ? (
-        <p className="mt-8 text-[var(--muted)]" role="status">
-          Loading projects…
-        </p>
+        <div style={{ display: "grid", gap: "0.875rem", gridTemplateColumns: "repeat(auto-fill, minmax(18rem, 1fr))", marginTop: "1.25rem" }}>
+          {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: "7rem", borderRadius: 12 }} />)}
+        </div>
       ) : items.length === 0 ? (
-        <div className="surface-card mt-6 p-8">
-          <p className="font-display text-xl font-semibold">No projects yet</p>
-          <p className="mt-2 text-[var(--muted)]">Create a project to start organizing work with your team.</p>
+        <div style={{ marginTop: "2rem", padding: "2.5rem", textAlign: "center", borderRadius: 14, border: "2px dashed var(--border)", background: "var(--surface)" }}>
+          <p style={{ fontWeight: 600, margin: "0 0 0.5rem" }}>No projects found</p>
+          <p style={{ color: "var(--muted)", fontSize: "0.875rem", margin: "0 0 1.25rem" }}>Create a project to organize your team's work.</p>
+          <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>Create project</button>
         </div>
       ) : (
-        <ul className="mt-6 grid gap-4">
-          {items.map((project) => (
-            <li key={project.id}>
-              <Link
-                to={`/projects/${project.id}`}
-                className="surface-card block p-5 transition-colors hover:bg-[var(--surface-muted)]"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="font-display text-xl font-semibold">{project.name}</p>
-                    <p className="mt-1 text-[var(--muted)]">
-                      {project.description || "No description yet."}
-                    </p>
-                  </div>
-                  <p className="text-sm font-medium text-[var(--accent)]">{statusLabel(project.status)}</p>
-                </div>
-                <p className="mt-4 text-sm text-[var(--muted)]">
-                  {project.members.length} member{project.members.length === 1 ? "" : "s"} · Due{" "}
-                  {formatDate(project.dueDate)} · Your role: {project.myRole}
-                </p>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div style={{ display: "grid", gap: "0.875rem", gridTemplateColumns: "repeat(auto-fill, minmax(18rem, 1fr))", marginTop: "1.25rem" }}>
+          {items.map(p => <ProjectCard key={p.id} project={p} />)}
+        </div>
       )}
 
-      {pagination ? (
-        <p className="mt-6 text-sm text-[var(--muted)]">
-          Showing {items.length} of {pagination.total} projects
-        </p>
-      ) : null}
+      {creating && (
+        <div className="overlay" role="presentation" onClick={() => !pending && setCreating(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="new-proj-title" onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+              <h2 id="new-proj-title" style={{ margin: 0, fontSize: "1.0625rem", fontWeight: 700 }}>New project</h2>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setCreating(false)} aria-label="Close">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <ProjectForm submitLabel="Create project" pending={pending} onSubmit={handleCreate} onCancel={() => setCreating(false)} />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

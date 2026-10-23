@@ -7,18 +7,24 @@ function mapUser(value) {
 }
 
 export function publicTask(task) {
+  const code = task.taskCode || ("TASK-" + String(task._id || task.id || "").slice(-4).toUpperCase());
   return {
     id: String(task._id || task.id),
+    taskCode: code,
     project: task.project?._id
-      ? { id: String(task.project._id), name: task.project.name }
+      ? { id: String(task.project._id), name: task.project.name, key: task.project.key || "PRJ" }
       : { id: String(task.project) },
     title: task.title,
-    description: task.description,
-    status: task.status,
-    priority: task.priority,
+    description: task.description || "",
+    status: task.status || "todo",
+    priority: task.priority || "medium",
     assignee: mapUser(task.assignee),
-    createdBy: mapUser(task.createdBy),
-    dueDate: task.dueDate,
+    createdBy: mapUser(task.createdBy || task.reporter),
+    reporter: mapUser(task.reporter || task.createdBy),
+    dueDate: task.dueDate || null,
+    estimatedHours: task.estimatedHours || 0,
+    tags: Array.isArray(task.tags) ? task.tags : [],
+    checklist: Array.isArray(task.checklist) ? task.checklist : [],
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
   };

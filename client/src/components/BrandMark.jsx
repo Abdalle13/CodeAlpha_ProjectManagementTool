@@ -1,17 +1,10 @@
-export default function BrandMark({ compact = false }) {
+export default function BrandMark() {
   return (
-    <div className={`flex items-center ${compact ? "gap-2" : "gap-3"}`}>
-      <span
-        aria-hidden="true"
-        className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--line)] bg-[var(--surface)]"
-      >
-        <span className="block h-4 w-4 rounded-[3px] border-2 border-[var(--accent)] border-r-transparent" />
-      </span>
-      <div className="leading-tight">
-        <p className={`font-display font-bold tracking-[-0.04em] ${compact ? "text-base" : "text-[1.15rem]"}`}>
-          Taskora
-        </p>
+    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+      <div style={{ width: 26, height: 26, background: "var(--accent)", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       </div>
+      <span style={{ fontWeight: 700, fontSize: "0.9rem", letterSpacing: "-0.02em" }}>Taskora</span>
     </div>
   );
 }

@@ -2,124 +2,144 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getDashboard, getErrorMessage } from "../lib/api.js";
 import { formatDate } from "../lib/projects.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
-const statusLabels = {
-  todo: "To Do",
-  in_progress: "In Progress",
-  in_review: "In Review",
-  done: "Done",
+const PRIORITY_COLOR = { low: "badge-gray", medium: "badge-blue", high: "badge-yellow", urgent: "badge-red" };
+const STATUS_META = {
+  todo:        { label: "To Do",       color: "#8b95ab" },
+  in_progress: { label: "In Progress", color: "#4f6ef7" },
+  in_review:   { label: "In Review",   color: "#d97c10" },
+  done:        { label: "Done",        color: "#17a55e" },
+  completed:   { label: "Done",        color: "#17a55e" },
 };
 
+function StatCard({ label, value, sub, accent }) {
+  return (
+    <div className="card" style={{ padding: "1.25rem" }}>
+      <p style={{ margin: 0, fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
+      <p style={{ margin: "0.5rem 0 0.25rem", fontSize: "2rem", fontWeight: 700, letterSpacing: "-0.03em", color: accent || "var(--ink)", lineHeight: 1 }}>{value ?? 0}</p>
+      {sub && <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--muted)" }}>{sub}</p>}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const [dashboard, setDashboard] = useState(null);
+  const { user }          = useAuth();
+  const [data, setData]   = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError]   = useState("");
 
   useEffect(() => {
     let active = true;
-    getDashboard()
-      .then((payload) => {
-        if (active) setDashboard(payload.data);
-      })
-      .catch((err) => {
-        if (active) setError(getErrorMessage(err, "Unable to load your dashboard."));
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+    getDashboard().then(r => { if (active) setData(r.data); }).catch(e => { if (active) setError(getErrorMessage(e, "Unable to load dashboard.")); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  if (loading) return <p className="text-[var(--muted)]" role="status">Loading your workspace…</p>;
-  if (error) return <p className="text-[var(--danger)]" role="alert">{error}</p>;
-  if (!dashboard) return null;
+  if (loading) return (
+    <section>
+      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fill, minmax(11rem, 1fr))", marginTop: "1.5rem" }}>
+        {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: "6rem", borderRadius: 12 }} />)}
+      </div>
+    </section>
+  );
+  if (error) return <p role="alert" style={{ color: "var(--red)" }}>{error}</p>;
+  if (!data)  return null;
 
-  const { metrics, taskStatus, dueSoon } = dashboard;
-  const totalStatusTasks = taskStatus.reduce((total, item) => total + item.count, 0);
-  const stats = [
-    { label: "Projects", value: metrics.totalProjects, detail: "Accessible workspaces" },
-    { label: "Assigned to me", value: metrics.assignedToMe, detail: "Open tasks" },
-    { label: "In progress", value: metrics.inProgress, detail: "Across your projects" },
-    { label: "Completed", value: metrics.completed, detail: "Tasks finished" },
-  ];
+  const { metrics, taskStatus, dueSoon } = data;
+  const total = taskStatus.reduce((s, x) => s + x.count, 0);
 
   return (
-    <section>
-      <h1 className="page-title">Dashboard</h1>
-      <p className="mt-2 max-w-2xl text-[var(--muted)]">A live view of your projects, workload, and upcoming deadlines.</p>
+    <section className="fade-in">
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+        <div>
+          <h1 className="page-title">Dashboard</h1>
+          <p style={{ marginTop: "0.35rem", color: "var(--muted)", fontSize: "0.875rem" }}>Welcome back, {user?.name?.split(" ")[0]}. Here is your workspace overview.</p>
+        </div>
+        <Link to="/projects" className="btn btn-primary">New project</Link>
+      </div>
 
-      <dl className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="surface-card p-5">
-            <dt className="text-sm text-[var(--muted)]">{stat.label}</dt>
-            <dd className="mt-2 font-display text-3xl font-bold">{stat.value}</dd>
-            <p className="mt-1 text-sm text-[var(--muted)]">{stat.detail}</p>
-          </div>
-        ))}
-      </dl>
+      {/* Stats */}
+      <div style={{ display: "grid", gap: "0.875rem", gridTemplateColumns: "repeat(auto-fill, minmax(10.5rem, 1fr))", marginTop: "1.5rem" }}>
+        <StatCard label="Projects"   value={metrics.totalProjects} sub="Accessible workspaces" />
+        <StatCard label="My tasks"   value={metrics.assignedToMe}  sub="Assigned to me" />
+        <StatCard label="In progress" value={metrics.inProgress}   sub="Active work items" accent="var(--accent)" />
+        <StatCard label="Completed"  value={metrics.completed}      sub="Tasks finished" accent="var(--green)" />
+      </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1.25fr]">
-        <section className="surface-card p-5" aria-labelledby="task-progress-heading">
-          <h2 id="task-progress-heading" className="font-display text-lg font-semibold">Task progress</h2>
-          {totalStatusTasks === 0 ? (
-            <p className="mt-4 text-sm text-[var(--muted)]">No tasks to summarize yet.</p>
+      {/* Overdue / upcoming */}
+      {(metrics.overdue > 0 || metrics.upcoming > 0) && (
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "1rem" }}>
+          {metrics.overdue > 0 && (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.35rem 0.75rem", background: "var(--red-soft)", border: "1px solid var(--red)", borderRadius: 8, fontSize: "0.8125rem", fontWeight: 600, color: "var(--red)" }}>
+              {metrics.overdue} overdue task{metrics.overdue !== 1 ? "s" : ""}
+            </div>
+          )}
+          {metrics.upcoming > 0 && (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.35rem 0.75rem", background: "var(--yellow-soft)", border: "1px solid var(--yellow)", borderRadius: 8, fontSize: "0.8125rem", fontWeight: 600, color: "var(--yellow)" }}>
+              {metrics.upcoming} due within 7 days
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1.3fr", marginTop: "1.25rem" }}>
+        {/* Progress */}
+        <div className="card" style={{ padding: "1.25rem" }}>
+          <h2 className="section-title" style={{ marginBottom: "1rem" }}>Task breakdown</h2>
+          {total === 0 ? (
+            <p style={{ color: "var(--muted)", fontSize: "0.875rem" }}>No tasks yet.</p>
           ) : (
-            <ul className="mt-5 grid gap-4">
-              {Object.entries(statusLabels).map(([status, label]) => {
-                const count = taskStatus.find((item) => item.status === status)?.count || 0;
-                const percentage = Math.round((count / totalStatusTasks) * 100);
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: "0.875rem" }}>
+              {Object.entries(STATUS_META).map(([key, meta]) => {
+                const count = taskStatus.find(x => x.status === key)?.count || 0;
+                const pct   = Math.round((count / total) * 100);
                 return (
-                  <li key={status}>
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span>{label}</span>
-                      <span className="text-[var(--muted)]">{count} · {percentage}%</span>
+                  <li key={key}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: "0.35rem" }}>
+                      <span style={{ fontWeight: 500, color: "var(--ink2)" }}>{meta.label}</span>
+                      <span style={{ color: "var(--muted)" }}>{count} &middot; {pct}%</span>
                     </div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]" role="progressbar" aria-label={`${label} tasks`} aria-valuenow={percentage} aria-valuemin="0" aria-valuemax="100">
-                      <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${percentage}%` }} />
+                    <div style={{ height: 6, background: "var(--surface2)", borderRadius: 99, overflow: "hidden" }} role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+                      <div style={{ width: pct + "%", height: "100%", background: meta.color, borderRadius: 99, transition: "width 600ms ease" }} />
                     </div>
                   </li>
                 );
               })}
             </ul>
           )}
-          <p className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            <span><strong className="text-[var(--danger)]">{metrics.overdue}</strong> overdue</span>
-            <span><strong>{metrics.upcoming}</strong> due in 7 days</span>
-          </p>
-        </section>
+        </div>
 
-        <section className="surface-card p-5" aria-labelledby="due-soon-heading">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 id="due-soon-heading" className="font-display text-lg font-semibold">Upcoming deadlines</h2>
-            <Link className="text-sm font-semibold text-[var(--accent)] hover:underline" to="/tasks">All tasks</Link>
+        {/* Due soon */}
+        <div className="card" style={{ padding: "1.25rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.75rem" }}>
+            <h2 className="section-title">Upcoming deadlines</h2>
+            <Link to="/tasks" style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--accent-text)", textDecoration: "none" }}>View all</Link>
           </div>
-          {dueSoon.length ? (
-            <ul className="mt-4 divide-y divide-[var(--line)]">
-              {dueSoon.map((task) => (
-                <li key={task.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium">{task.title}</p>
-                    <p className="text-sm text-[var(--muted)]">{task.project?.name || "Project"}{task.assignee ? ` · ${task.assignee.name}` : " · Unassigned"}</p>
+          {dueSoon.length === 0 ? (
+            <p style={{ color: "var(--muted)", fontSize: "0.875rem" }}>No upcoming deadlines.</p>
+          ) : (
+            <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+              {dueSoon.map((task, i) => (
+                <li key={task.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.75rem", padding: "0.625rem 0", borderTop: i === 0 ? "none" : "1px solid var(--border)" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: 0, fontWeight: 500, fontSize: "0.875rem", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{task.title}</p>
+                    <p style={{ margin: "0.15rem 0 0", fontSize: "0.775rem", color: "var(--muted)" }}>{task.project?.name}{task.assignee ? " · " + task.assignee.name : ""}</p>
                   </div>
-                  <time className="text-sm text-[var(--muted)]" dateTime={task.dueDate}>{formatDate(task.dueDate)}</time>
+                  <time style={{ fontSize: "0.775rem", color: "var(--muted)", whiteSpace: "nowrap", flexShrink: 0 }} dateTime={task.dueDate}>{formatDate(task.dueDate)}</time>
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="mt-4 text-sm text-[var(--muted)]">No outstanding tasks have due dates.</p>
           )}
-        </section>
+        </div>
       </div>
 
-      {metrics.totalProjects === 0 ? (
-        <div className="mt-6 border-t border-[var(--line)] pt-5">
-          <p className="font-display text-lg font-semibold">Start with a project</p>
-          <p className="mt-1 text-[var(--muted)]">Create or join a workspace to plan tasks with your team.</p>
-          <Link className="btn btn-primary mt-4" to="/projects">Go to projects</Link>
+      {metrics.totalProjects === 0 && (
+        <div style={{ marginTop: "1.5rem", padding: "2rem", textAlign: "center", borderRadius: 14, border: "2px dashed var(--border)", background: "var(--surface)" }}>
+          <p style={{ fontWeight: 600, fontSize: "1rem", margin: "0 0 0.5rem" }}>You have no projects yet</p>
+          <p style={{ color: "var(--muted)", fontSize: "0.875rem", margin: "0 0 1.25rem" }}>Create a project to start planning and managing tasks with your team.</p>
+          <Link to="/projects" className="btn btn-primary">Create your first project</Link>
         </div>
-      ) : null}
+      )}
     </section>
   );
 }

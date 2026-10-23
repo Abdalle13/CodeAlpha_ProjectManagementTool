@@ -1,43 +1,29 @@
 import { Link } from "react-router-dom";
-import BrandMark from "../components/BrandMark.jsx";
-import ThemeToggle from "../components/ThemeToggle.jsx";
 
-export default function AuthLayout({ children, title, subtitle, switchText, switchTo, switchLabel }) {
+export default function AuthLayout({ title, subtitle, children, switchText, switchTo, switchLabel }) {
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <div className="mx-auto grid min-h-screen max-w-6xl lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="hidden flex-col justify-between border-r border-[var(--line)] bg-[var(--bg-accent)] px-10 py-8 lg:flex">
-          <BrandMark />
-          <div className="max-w-md">
-            <p className="font-display text-4xl font-bold tracking-[-0.05em] leading-tight">
-              Plan projects. Manage tasks. Work together.
-            </p>
-            <p className="mt-5 text-lg text-[var(--muted)]">
-              Taskora is a workspace for teams that need a clear view of projects, owners, and progress.
-            </p>
+    <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", background: "var(--bg)" }}>
+      <div style={{ width: "min(26rem, 100%)" }}>
+        {/* Brand */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "2.25rem" }}>
+          <div style={{ width: 32, height: 32, background: "var(--accent)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           </div>
-          <p className="text-sm text-[var(--muted)]">Internship project for CodeAlpha Full Stack Development.</p>
-        </section>
+          <span style={{ fontWeight: 700, fontSize: "1rem", letterSpacing: "-0.02em", color: "var(--ink)" }}>Taskora</span>
+        </div>
 
-        <section className="flex flex-col px-5 py-6 sm:px-8">
-          <header className="mb-8 flex items-center justify-between lg:justify-end">
-            <div className="lg:hidden">
-              <BrandMark compact />
-            </div>
-            <ThemeToggle />
-          </header>
-          <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center pb-10">
-            <h1 className="page-title">{title}</h1>
-            <p className="mt-2 text-[var(--muted)]">{subtitle}</p>
-            <div className="mt-8">{children}</div>
-            <p className="mt-8 text-sm text-[var(--muted)]">
-              {switchText}{" "}
-              <Link className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline" to={switchTo}>
-                {switchLabel}
-              </Link>
-            </p>
-          </div>
-        </section>
+        <div className="card-raised" style={{ padding: "2rem" }}>
+          <h1 style={{ margin: "0 0 0.35rem", fontSize: "1.25rem", fontWeight: 700, letterSpacing: "-0.02em" }}>{title}</h1>
+          {subtitle && <p style={{ margin: "0 0 1.5rem", fontSize: "0.875rem", color: "var(--muted)", lineHeight: 1.5 }}>{subtitle}</p>}
+          {children}
+        </div>
+
+        {switchText && (
+          <p style={{ marginTop: "1.25rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted)" }}>
+            {switchText}{" "}
+            <Link to={switchTo} style={{ color: "var(--accent-text)", fontWeight: 600, textDecoration: "none" }}>{switchLabel}</Link>
+          </p>
+        )}
       </div>
     </div>
   );

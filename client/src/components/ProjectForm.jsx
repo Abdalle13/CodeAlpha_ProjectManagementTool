@@ -1,114 +1,40 @@
 import { useState } from "react";
-import { PROJECT_STATUSES, toDateInput } from "../lib/projects.js";
-
-const empty = {
-  name: "",
-  description: "",
-  status: "planned",
-  startDate: "",
-  dueDate: "",
-};
-
-export default function ProjectForm({ initialValue = empty, submitLabel, pending, onSubmit, onCancel }) {
-  const [form, setForm] = useState({
-    ...empty,
-    ...initialValue,
-    startDate: toDateInput(initialValue.startDate),
-    dueDate: toDateInput(initialValue.dueDate),
-  });
-
-  function update(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    onSubmit({
-      name: form.name.trim(),
-      description: form.description.trim(),
-      status: form.status,
-      startDate: form.startDate || null,
-      dueDate: form.dueDate || null,
-    });
-  }
-
+const STATUSES = [
+  { value: "planning",    label: "Planning" },
+  { value: "active",      label: "Active" },
+  { value: "on_hold",     label: "On Hold" },
+  { value: "completed",   label: "Completed" },
+  { value: "cancelled",   label: "Cancelled" },
+];
+export default function ProjectForm({ initial = {}, submitLabel = "Save", pending, onSubmit, onCancel }) {
+  const [form, setForm] = useState({ name: initial.name || "", description: initial.description || "", status: initial.status || "planning", dueDate: initial.dueDate ? new Date(initial.dueDate).toISOString().slice(0, 10) : "" });
+  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+  function handleSubmit(e) { e.preventDefault(); onSubmit(form); }
   return (
-    <form className="grid gap-4" onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1rem" }}>
       <div>
-        <label className="label" htmlFor="project-name">
-          Name
-        </label>
-        <input
-          id="project-name"
-          className="input"
-          value={form.name}
-          onChange={(event) => update("name", event.target.value)}
-          required
-        />
+        <label className="label" htmlFor="pf-name">Project name *</label>
+        <input id="pf-name" className="input" value={form.name} onChange={set("name")} placeholder="e.g. Website Redesign" minLength={2} maxLength={100} required />
       </div>
       <div>
-        <label className="label" htmlFor="project-description">
-          Description
-        </label>
-        <textarea
-          id="project-description"
-          className="input textarea"
-          value={form.description}
-          onChange={(event) => update("description", event.target.value)}
-        />
+        <label className="label" htmlFor="pf-desc">Description</label>
+        <textarea id="pf-desc" className="input" value={form.description} onChange={set("description")} placeholder="What is this project about?" maxLength={2000} style={{ minHeight: "4.5rem" }} />
       </div>
-      <div>
-        <label className="label" htmlFor="project-status">
-          Status
-        </label>
-        <select
-          id="project-status"
-          className="input"
-          value={form.status}
-          onChange={(event) => update("status", event.target.value)}
-        >
-          {PROJECT_STATUSES.map((status) => (
-            <option key={status.value} value={status.value}>
-              {status.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
         <div>
-          <label className="label" htmlFor="project-start">
-            Start date
-          </label>
-          <input
-            id="project-start"
-            className="input"
-            type="date"
-            value={form.startDate}
-            onChange={(event) => update("startDate", event.target.value)}
-          />
+          <label className="label" htmlFor="pf-status">Status</label>
+          <select id="pf-status" className="input" value={form.status} onChange={set("status")}>
+            {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
         </div>
         <div>
-          <label className="label" htmlFor="project-due">
-            Due date
-          </label>
-          <input
-            id="project-due"
-            className="input"
-            type="date"
-            value={form.dueDate}
-            onChange={(event) => update("dueDate", event.target.value)}
-          />
+          <label className="label" htmlFor="pf-due">Due date</label>
+          <input id="pf-due" className="input" type="date" value={form.dueDate} onChange={set("dueDate")} />
         </div>
       </div>
-      <div className="flex flex-wrap justify-end gap-2">
-        {onCancel ? (
-          <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={pending}>
-            Cancel
-          </button>
-        ) : null}
-        <button type="submit" className="btn btn-primary" disabled={pending}>
-          {pending ? "Saving…" : submitLabel}
-        </button>
+      <div style={{ display: "flex", gap: "0.625rem", justifyContent: "flex-end", paddingTop: "0.5rem" }}>
+        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={pending}>Cancel</button>
+        <button type="submit" className="btn btn-primary" disabled={pending}>{pending ? "Saving…" : submitLabel}</button>
       </div>
     </form>
   );

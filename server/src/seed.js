@@ -12,15 +12,14 @@ import { Comment } from "./models/Comment.js";
 import { Activity } from "./models/Activity.js";
 
 async function runSeed() {
-  console.log("🌱 Starting Taskora database seeder...");
+  console.log("[seed] Starting Taskora database seeder...");
   const db = await connectDatabase();
   if (!db.connected) {
-    console.error("❌ Failed to connect to database:", db.reason);
+    console.error("[seed] Failed to connect to database:", db.reason);
     process.exit(1);
   }
 
-  // Clear existing Taskora records
-  console.log("🧹 Clearing old data...");
+  console.log("[seed] Clearing existing data...");
   await Promise.all([
     User.deleteMany({}),
     Project.deleteMany({}),
@@ -29,14 +28,14 @@ async function runSeed() {
     Activity.deleteMany({}),
   ]);
 
-  // Create Users
-  console.log("👤 Creating seed users...");
+  console.log("[seed] Creating users...");
   const passwordHash = await bcrypt.hash("Password123!", 10);
 
   const abdalle = await User.create({
     name: "Abdalle (Lead Developer)",
     email: "demo@taskora.io",
     passwordHash,
+    role: "admin",
     systemRole: "admin",
     isActive: true,
   });
@@ -65,193 +64,244 @@ async function runSeed() {
     isActive: true,
   });
 
-  console.log("📁 Creating projects...");
-  // Project 1: NextGen SaaS Mobile App
+  console.log("[seed] Creating projects...");
   const project1 = await Project.create({
-    name: "🚀 NextGen SaaS Mobile App",
+    name: "NextGen Mobile App",
+    key: "MOB",
     description: "Cross-platform iOS and Android application with real-time collaboration, offline sync, and push notifications.",
+    category: "Engineering",
     status: "active",
+    priority: "urgent",
     owner: abdalle._id,
     members: [
-      { user: abdalle._id, role: "owner", joinedAt: new Date() },
-      { user: sarah._id, role: "admin", joinedAt: new Date() },
-      { user: alex._id, role: "member", joinedAt: new Date() },
-      { user: khalid._id, role: "member", joinedAt: new Date() },
+      { user: abdalle._id, role: "lead", joinedAt: new Date() },
+      { user: sarah._id, role: "contributor", joinedAt: new Date() },
+      { user: alex._id, role: "contributor", joinedAt: new Date() },
+      { user: khalid._id, role: "viewer", joinedAt: new Date() },
     ],
     startDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    budget: 25000,
+    taskSequence: 106,
   });
 
-  // Project 2: E-Commerce Platform Redesign
   const project2 = await Project.create({
-    name: "⚡ E-Commerce Platform Redesign",
-    description: "Modern headless storefront revamp using Next.js, Tailwind CSS, Stripe checkout, and high conversion cart flows.",
+    name: "E-Commerce Platform Redesign",
+    key: "ECO",
+    description: "Modern headless storefront revamp using Next.js, Stripe checkout, and high conversion cart flows.",
+    category: "Product",
     status: "active",
+    priority: "high",
     owner: abdalle._id,
     members: [
-      { user: abdalle._id, role: "owner", joinedAt: new Date() },
-      { user: sarah._id, role: "member", joinedAt: new Date() },
-      { user: alex._id, role: "member", joinedAt: new Date() },
+      { user: abdalle._id, role: "lead", joinedAt: new Date() },
+      { user: sarah._id, role: "contributor", joinedAt: new Date() },
+      { user: alex._id, role: "contributor", joinedAt: new Date() },
     ],
     startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+    budget: 18000,
+    taskSequence: 102,
   });
 
-  // Project 3: Cloud Infrastructure & DevOps
   const project3 = await Project.create({
-    name: "🛡️ Cloud Infrastructure & DevOps",
+    name: "Cloud Infrastructure and DevOps",
+    key: "CLD",
     description: "Zero-downtime deployment pipelines, automated Docker builds, Redis caching, and multi-region failover monitoring.",
-    status: "planned",
+    category: "Infrastructure",
+    status: "planning",
+    priority: "medium",
     owner: abdalle._id,
     members: [
-      { user: abdalle._id, role: "owner", joinedAt: new Date() },
-      { user: alex._id, role: "admin", joinedAt: new Date() },
+      { user: abdalle._id, role: "lead", joinedAt: new Date() },
+      { user: alex._id, role: "contributor", joinedAt: new Date() },
     ],
     startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     dueDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+    budget: 12000,
+    taskSequence: 100,
   });
 
-  console.log("📋 Creating tasks across Kanban columns...");
-  // Tasks for Project 1
+  console.log("[seed] Creating tasks...");
   const t1 = await Task.create({
     project: project1._id,
-    title: "Design Onboarding & Welcome Flow in Figma",
-    description: "Create interactive prototypes for 4-step user onboarding with dark/light preview screens.",
-    status: "done",
+    taskCode: "MOB-101",
+    title: "Design Onboarding and Welcome Flow in Figma",
+    description: "Create interactive prototypes for 4-step user onboarding with dark and light preview screens.",
+    status: "completed",
     priority: "high",
     assignee: sarah._id,
-    createdBy: abdalle._id,
+    reporter: abdalle._id,
     dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    estimatedHours: 16,
+    tags: ["design", "ui", "onboarding"],
+    checklist: [
+      { text: "Welcome screen mockups", completed: true },
+      { text: "Permission dialog guidelines", completed: true },
+      { text: "Export tokens for React Native", completed: true },
+    ],
   });
 
   const t2 = await Task.create({
     project: project1._id,
-    title: "Implement JWT & Refresh Token Authentication",
+    taskCode: "MOB-102",
+    title: "Implement JWT and Refresh Token Authentication",
     description: "Set up HttpOnly secure cookies, token verification middleware, and role-based permissions.",
-    status: "done",
+    status: "completed",
     priority: "urgent",
     assignee: abdalle._id,
-    createdBy: abdalle._id,
+    reporter: abdalle._id,
     dueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    estimatedHours: 20,
+    tags: ["backend", "security", "auth"],
+    checklist: [
+      { text: "Access token generation", completed: true },
+      { text: "Refresh token rotation in DB", completed: true },
+      { text: "Security unit tests", completed: true },
+    ],
   });
 
   const t3 = await Task.create({
     project: project1._id,
+    taskCode: "MOB-103",
     title: "Develop Interactive Kanban Board with Live Drag",
     description: "Support column state transitions across To Do, In Progress, In Review, and Done with instantaneous backend sync.",
     status: "in_progress",
     priority: "urgent",
     assignee: alex._id,
-    createdBy: abdalle._id,
+    reporter: abdalle._id,
     dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    estimatedHours: 24,
+    tags: ["frontend", "kanban", "react"],
+    checklist: [
+      { text: "HTML5 drag and drop handlers", completed: true },
+      { text: "Optimistic UI reordering", completed: false },
+      { text: "WebSocket state broadcast", completed: false },
+    ],
   });
 
   const t4 = await Task.create({
     project: project1._id,
-    title: "Task Commenting & Activity Feed Integration",
+    taskCode: "MOB-104",
+    title: "Task Commenting and Activity Feed Integration",
     description: "Enable team members to comment on tasks with timestamps, user badges, and activity history.",
     status: "in_review",
     priority: "high",
     assignee: sarah._id,
-    createdBy: abdalle._id,
+    reporter: abdalle._id,
     dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+    estimatedHours: 12,
+    tags: ["collaboration", "comments"],
+    checklist: [
+      { text: "Comment list component", completed: true },
+      { text: "Activity stream event emitter", completed: true },
+    ],
   });
 
   const t5 = await Task.create({
     project: project1._id,
+    taskCode: "MOB-105",
     title: "WebSocket Real-Time Notification Trigger",
     description: "Push live toasts when a user is assigned a task or when someone comments on an active task.",
     status: "todo",
     priority: "medium",
     assignee: alex._id,
-    createdBy: abdalle._id,
+    reporter: abdalle._id,
     dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    estimatedHours: 14,
+    tags: ["realtime", "sockets"],
   });
 
   const t6 = await Task.create({
     project: project1._id,
+    taskCode: "MOB-106",
     title: "Automate End-to-End API Health Monitoring",
     description: "Configure uptime alerts and rate-limiting diagnostics for production release.",
     status: "todo",
     priority: "low",
     assignee: khalid._id,
-    createdBy: abdalle._id,
+    reporter: abdalle._id,
     dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+    estimatedHours: 8,
+    tags: ["devops", "monitoring"],
   });
 
-  // Tasks for Project 2
+  // Project 2 tasks
   await Task.create({
     project: project2._id,
-    title: "Stripe Checkout & Webhook Handling",
+    taskCode: "ECO-101",
+    title: "Stripe Checkout and Webhook Handling",
     description: "Integrate payment intents, tax calculations, and successful order dispatch callbacks.",
     status: "in_progress",
     priority: "urgent",
     assignee: abdalle._id,
-    createdBy: abdalle._id,
+    reporter: abdalle._id,
     dueDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+    estimatedHours: 18,
+    tags: ["payments", "stripe"],
   });
 
   await Task.create({
     project: project2._id,
-    title: "Responsive Product Catalog & Dynamic Filtering",
+    taskCode: "ECO-102",
+    title: "Responsive Product Catalog and Dynamic Filtering",
     description: "Category pills, search query debounce, and price slider with instant URL sync.",
-    status: "done",
+    status: "completed",
     priority: "high",
     assignee: sarah._id,
-    createdBy: abdalle._id,
+    reporter: abdalle._id,
     dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    estimatedHours: 15,
+    tags: ["frontend", "search"],
   });
 
-  console.log("💬 Adding task comments...");
+  console.log("[seed] Adding task comments...");
   await Comment.create({
     project: project1._id,
     task: t3._id,
     author: sarah._id,
-    body: "The card dragging looks very smooth! Let's ensure the priority badges stand out with vibrant accents.",
+    content: "The card dragging feels responsive and clean. Let us make sure priority badges use distinct accents.",
   });
 
   await Comment.create({
     project: project1._id,
     task: t3._id,
     author: abdalle._id,
-    body: "Great point Sarah! Added distinct color-coded badges for Urgent (crimson), High (amber), Medium (blue), and Low (slate).",
+    content: "Agreed Sarah. Distinct color badges are configured for Urgent, High, Medium, and Low priorities.",
   });
 
   await Comment.create({
     project: project1._id,
     task: t4._id,
     author: alex._id,
-    body: "Tested comments API with multiple users—responses are under 30ms on MongoDB Atlas.",
+    content: "Tested comments API with multiple users, latency is under 30ms.",
   });
 
-  console.log("📊 Logging activity items...");
+  console.log("[seed] Logging activity items...");
   await Activity.create({
     project: project1._id,
     task: t2._id,
-    actor: abdalle._id,
-    action: "task_completed",
-    summary: "Abdalle completed 'Implement JWT & Refresh Token Authentication'",
+    user: abdalle._id,
+    action: "status_changed",
+    description: "Abdalle marked 'Implement JWT and Refresh Token Authentication' as completed",
   });
 
   await Activity.create({
     project: project1._id,
     task: t3._id,
-    actor: alex._id,
-    action: "task_updated",
-    summary: "Alex moved 'Develop Interactive Kanban Board' to In Progress",
+    user: alex._id,
+    action: "status_changed",
+    description: "Alex moved 'Develop Interactive Kanban Board' to In Progress",
   });
 
-  console.log("\n==================================================");
-  console.log("✅ Seed completed successfully!");
-  console.log("==================================================");
-  console.log("Demo Credentials:");
+  console.log("[seed] Seed completed successfully.");
+  console.log("Credentials:");
   console.log("  Email:    demo@taskora.io");
   console.log("  Password: Password123!");
-  console.log("==================================================\n");
   process.exit(0);
 }
 
 runSeed().catch((err) => {
-  console.error("❌ Seed failed:", err);
+  console.error("[seed] Seed failed:", err);
   process.exit(1);
 });
