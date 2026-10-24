@@ -154,3 +154,22 @@ select.input { cursor: pointer; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted2); }
 
 .fade-in { animation: fade-in 200ms ease; }
+/* Responsive Visibility */
+@media (min-width: 1024px) {
+  .lg-hidden {
+    display: none !important;
+  }
+}
+@media (max-width: 1023px) {
+  .max-lg-hidden {
+    display: none !important;
+  }
+  #sidebar {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 40 !important;
+    box-shadow: var(--shadow-lg);
+  }
+}

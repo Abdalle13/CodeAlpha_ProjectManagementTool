@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import ThemeToggle from "../components/ThemeToggle.jsx";
+import BrandMark from "../components/BrandMark.jsx";
 
 const NAV = [
   { to: "/",         label: "Dashboard",  end: true,  icon: IconDash },
@@ -66,11 +67,8 @@ export default function AppLayout() {
         className={open ? "" : "max-lg-hidden"}
       >
         {/* Brand */}
-        <div style={{ padding: "1.125rem 1rem 0.75rem", display: "flex", alignItems: "center", gap: "0.6rem", borderBottom: "1px solid var(--border)" }}>
-          <div style={{ width: 28, height: 28, background: "var(--accent)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          </div>
-          <span style={{ fontWeight: 700, fontSize: "0.9375rem", letterSpacing: "-0.02em", color: "var(--ink)" }}>Taskora</span>
+        <div style={{ padding: "1.125rem 1rem 0.75rem", display: "flex", alignItems: "center", borderBottom: "1px solid var(--border)" }}>
+          <BrandMark compact />
         </div>
 
         {/* Nav */}

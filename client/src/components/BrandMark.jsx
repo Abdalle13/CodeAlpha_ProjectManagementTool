@@ -1,10 +1,35 @@
-export default function BrandMark() {
+export default function BrandMark({ compact = false }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-      <div style={{ width: 26, height: 26, background: "var(--accent)", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <div className="brand-mark" style={{ display: "inline-flex", alignItems: "center", gap: compact ? "0.5rem" : "0.75rem" }}>
+      <span
+        aria-hidden="true"
+        style={{
+          display: "grid",
+          placeItems: "center",
+          width: compact ? "1.875rem" : "2.25rem",
+          height: compact ? "1.875rem" : "2.25rem",
+          borderRadius: "0.625rem",
+          border: "1px solid var(--border)",
+          background: "var(--surface)",
+          boxShadow: "var(--shadow-sm)"
+        }}
+      >
+        <span
+          style={{
+            display: "block",
+            width: "1rem",
+            height: "1rem",
+            borderRadius: "3px",
+            border: "2px solid var(--accent)",
+            borderRightColor: "transparent"
+          }}
+        />
+      </span>
+      <div style={{ lineHeight: 1.15 }}>
+        <span style={{ fontWeight: 800, fontSize: compact ? "1rem" : "1.2rem", letterSpacing: "-0.035em", color: "var(--ink)" }}>
+          Taskora
+        </span>
       </div>
-      <span style={{ fontWeight: 700, fontSize: "0.9rem", letterSpacing: "-0.02em" }}>Taskora</span>
     </div>
   );
 }

@@ -6,7 +6,7 @@ export const PROJECT_PRIORITIES = ["low", "medium", "high", "urgent"];
 const memberSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    role: { type: String, enum: ["lead", "contributor", "viewer"], default: "contributor" },
+    role: { type: String, enum: ["owner", "lead", "contributor", "viewer", "admin", "member"], default: "contributor" },
     joinedAt: { type: Date, default: Date.now },
   },
   { _id: false }

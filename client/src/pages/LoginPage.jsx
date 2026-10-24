@@ -55,11 +55,7 @@ export default function LoginPage() {
         <button type="submit" className="btn btn-primary btn-lg" style={{ width: "100%", marginTop: "0.25rem" }} disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
         </button>
-        <div style={{ borderTop: "1px solid var(--border)", paddingTop: "0.875rem", marginTop: "0.25rem" }}>
-          <button type="button" onClick={handleDemo} disabled={pending} className="btn btn-secondary" style={{ width: "100%", fontSize: "0.8125rem" }}>
-            Continue with demo account
-          </button>
-        </div>
+        
       </form>
     </AuthLayout>
   );
