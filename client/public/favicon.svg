@@ -1,20 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="taskora-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="taskora-t-grad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#3b82f6"/>
-      <stop offset="50%" stop-color="#4f46e5"/>
-      <stop offset="100%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
     </linearGradient>
-    <filter id="taskora-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#1e1b4b" flood-opacity="0.3"/>
-    </filter>
   </defs>
-  <!-- Background badge -->
-  <rect width="64" height="64" rx="16" fill="url(#taskora-grad)" filter="url(#taskora-shadow)"/>
-  <!-- Decorative inner border -->
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
-  <!-- Taskora 'T' and agile check mark -->
-  <path d="M 17 21 C 17 19.34 18.34 18 20 18 L 44 18 C 45.66 18 47 19.34 47 21 C 47 22.66 45.66 24 44 24 L 35 24 L 35 44 C 35 45.66 33.66 47 32 47 C 30.34 47 29 45.66 29 44 L 29 24 L 20 24 C 18.34 24 17 22.66 17 21 Z" fill="#ffffff"/>
-  <!-- Dynamic check/task accent indicator -->
-  <circle cx="44" cy="42" r="5" fill="#38bdf8"/>
+  <!-- Background Squircle -->
+  <rect width="64" height="64" rx="16" fill="url(#taskora-t-grad)"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="14.5" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+  <!-- Bold Geometric T -->
+  <path d="M 17 15 L 47 15 C 48.66 15 50 16.34 50 18 L 50 20 C 50 21.66 48.66 23 47 23 L 37 23 L 37 47 C 37 48.66 35.66 50 34 50 L 30 50 C 28.34 50 27 48.66 27 47 L 27 23 L 17 23 C 15.34 23 14 21.66 14 20 L 14 18 C 14 16.34 15.34 15 17 15 Z" fill="#ffffff"/>
 </svg>

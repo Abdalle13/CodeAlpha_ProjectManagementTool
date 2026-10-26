@@ -51,8 +51,8 @@ export async function sendPasswordResetEmail({ to, resetToken, userName }) {
           <td style="padding: 28px 32px; background: #ffffff; border-bottom: 1px solid #f1f5f9;">
             <table cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="width: 44px; height: 44px; background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); border-radius: 12px; text-align: center; vertical-align: middle;">
-                  <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 24px; font-weight: 900; color: #ffffff; line-height: 44px; display: inline-block;">T</span>
+                <td style="width: 44px; height: 44px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; text-align: center; vertical-align: middle; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">
+                  <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 26px; font-weight: 900; color: #ffffff; line-height: 44px; display: inline-block;">T</span>
                 </td>
                 <td style="padding-left: 14px; vertical-align: middle;">
                   <div style="font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; line-height: 1.1;">Taskora</div>
