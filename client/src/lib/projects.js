@@ -23,3 +23,14 @@ export function toDateInput(value) {
 export function canManageProject(role) {
   return role === "owner" || role === "admin";
 }
+
+export function projectStatusBadge(status) {
+  if (status === "active") return "badge-blue";
+  if (status === "completed") return "badge-green";
+  if (status === "planning") return "badge-yellow";
+  return "badge-gray";
+}
+
+export function projectStatusLabel(status) {
+  return statusLabel(status);
+}

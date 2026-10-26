@@ -2,9 +2,10 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export function GuestRoute() {
-  const { isAuthenticated, status } = useAuth();
+  const { user, isAuthenticated, status } = useAuth();
   if (status === "loading") return null;
-  return isAuthenticated ? <Navigate to="/" replace /> : <Outlet />;
+  const target = user?.systemRole === "admin" ? "/admin" : "/";
+  return isAuthenticated ? <Navigate to={target} replace /> : <Outlet />;
 }
 
 export function ProtectedRoute() {
@@ -17,4 +18,10 @@ export function ProtectedRoute() {
 export function SystemAdminRoute() {
   const { user } = useAuth();
   return user?.systemRole === "admin" ? <Outlet /> : <Navigate to="/" replace />;
+}
+
+export function MemberRoute() {
+  const { user } = useAuth();
+  // Admins must strictly only use the Admin Console (/admin), never regular home/workspace
+  return user?.systemRole === "admin" ? <Navigate to="/admin" replace /> : <Outlet />;
 }

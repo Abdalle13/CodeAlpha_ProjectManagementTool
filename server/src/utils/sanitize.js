@@ -13,13 +13,13 @@ export function isValidEmail(value) {
 export function publicUser(user) {
   if (!user) return null;
 
+  const role = user.role || user.systemRole || "user";
   return {
     id: String(user._id || user.id),
     name: user.name,
     email: user.email,
-    role: user.role || user.systemRole || "member",
-    systemRole: user.role || user.systemRole || "member",
-    department: user.department || "Engineering",
+    role,
+    systemRole: role,
     title: user.title || "Software Engineer",
     avatarColor: user.avatarColor || "#3b82f6",
     isActive: user.isActive !== false,

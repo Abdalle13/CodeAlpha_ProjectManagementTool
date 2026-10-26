@@ -10,6 +10,7 @@ import taskRouter from "./routes/tasks.js";
 import adminRouter from "./routes/admin.js";
 import collaborationRouter from "./routes/collaboration.js";
 import dashboardRouter from "./routes/dashboard.js";
+import usersRouter from "./routes/users.js";
 import taskCollectionRouter from "./routes/taskCollection.js";
 import { notFound } from "./middleware/notFound.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -56,6 +57,7 @@ export function createApp() {
   app.use("/api/projects/:id", collaborationRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api/dashboard", dashboardRouter);
+  app.use("/api/users", usersRouter);
 
   app.use(notFound);
   app.use(errorHandler);

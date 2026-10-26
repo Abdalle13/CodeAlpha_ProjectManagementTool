@@ -30,6 +30,16 @@ export async function logoutAccount() {
   return response.data;
 }
 
+export async function forgotPasswordApi(payload) {
+  const response = await api.post("/auth/forgot-password", payload);
+  return response.data;
+}
+
+export async function resetPasswordApi(payload) {
+  const response = await api.post("/auth/reset-password", payload);
+  return response.data;
+}
+
 export async function getCurrentUser() {
   const response = await api.get("/auth/me");
   return response.data;
@@ -120,6 +130,11 @@ export async function createTaskComment(projectId, taskId, payload) {
   return response.data;
 }
 
+export async function getAdminStats() {
+  const response = await api.get("/admin/stats");
+  return response.data;
+}
+
 export async function listAdminUsers(params = {}) {
   const response = await api.get("/admin/users", { params });
   return response.data;
@@ -130,8 +145,18 @@ export async function bootstrapSystemAdmin(token) {
   return response.data;
 }
 
+export async function createAdminUser(payload) {
+  const response = await api.post("/admin/users", payload);
+  return response.data;
+}
+
 export async function updateAdminUser(userId, payload) {
   const response = await api.patch(`/admin/users/${userId}`, payload);
+  return response.data;
+}
+
+export async function deleteAdminUser(userId) {
+  const response = await api.delete(`/admin/users/${userId}`);
   return response.data;
 }
 
@@ -142,6 +167,26 @@ export async function listAdminProjects(params = {}) {
 
 export async function deleteAdminProject(projectId) {
   const response = await api.delete(`/admin/projects/${projectId}`);
+  return response.data;
+}
+
+export async function listAdminActivity(params = {}) {
+  const response = await api.get("/admin/activity", { params });
+  return response.data;
+}
+
+export async function changePassword(payload) {
+  const response = await api.put("/auth/password", payload);
+  return response.data;
+}
+
+export async function updateProfile(payload) {
+  const response = await api.put("/auth/profile", payload);
+  return response.data;
+}
+
+export async function listTeamMembers() {
+  const response = await api.get("/users");
   return response.data;
 }
 

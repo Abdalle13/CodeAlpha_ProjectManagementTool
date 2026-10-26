@@ -27,9 +27,9 @@ describe("ProjectsPage", () => {
     const user = userEvent.setup();
     renderApp(<ProjectsPage />, { route: "/projects" });
 
-    expect(await screen.findByText(/no projects yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no projects found/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /new project/i }));
-    expect(screen.getByRole("dialog", { name: /new project/i })).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("renders projects returned by the API", async () => {

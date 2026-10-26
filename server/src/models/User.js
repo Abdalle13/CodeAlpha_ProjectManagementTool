@@ -22,16 +22,16 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
+    systemRole: {
+      type: String,
+      enum: ["admin", "user"],
+      default: "user",
+    },
     role: {
       type: String,
-      enum: ["admin", "manager", "member"],
-      default: "member",
+      enum: ["admin", "manager", "member", "user"],
+      default: "user",
       required: true,
-    },
-    department: {
-      type: String,
-      trim: true,
-      default: "Engineering",
     },
     title: {
       type: String,
@@ -41,6 +41,14 @@ const userSchema = new mongoose.Schema(
     avatarColor: {
       type: String,
       default: "#3b82f6",
+    },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
     },
     isActive: {
       type: Boolean,
@@ -52,6 +60,15 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.pre("save", function (next) {
+  if (this.isModified("systemRole") && !this.isModified("role")) {
+    this.role = this.systemRole === "admin" ? "admin" : "user";
+  } else if (this.isModified("role") && !this.isModified("systemRole")) {
+    this.systemRole = this.role === "admin" ? "admin" : "user";
+  }
+  next();
+});
 
 userSchema.set("toJSON", {
   transform(_doc, ret) {

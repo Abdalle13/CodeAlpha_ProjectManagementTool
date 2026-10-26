@@ -46,9 +46,15 @@ describe("AdminPage", () => {
   });
 
   it("shows all-account and project controls", async () => {
+    const user = userEvent.setup();
     renderApp(<AdminPage />, { route: "/admin" });
+
+    // Users tab shows first
     expect(await screen.findByText("grace@taskora.test")).toBeInTheDocument();
-    expect(screen.getByText("Product launch")).toBeInTheDocument();
+
+    // Click Projects tab to see project data
+    await user.click(screen.getByRole("button", { name: /projects/i }));
+    expect(await screen.findByText("Product launch")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Make admin" })).toBeInTheDocument();
   });
 

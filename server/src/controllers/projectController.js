@@ -91,8 +91,8 @@ function validateProjectInput(body, { partial = false } = {}) {
 
 async function reloadProject(id) {
   return Project.findById(id)
-    .populate("owner", "name email role department avatarColor")
-    .populate("members.user", "name email role department avatarColor");
+    .populate("owner", "name email role avatarColor")
+    .populate("members.user", "name email role avatarColor");
 }
 
 export const listProjects = asyncHandler(async (req, res) => {
@@ -127,8 +127,8 @@ export const listProjects = asyncHandler(async (req, res) => {
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("owner", "name email role department avatarColor")
-      .populate("members.user", "name email role department avatarColor"),
+      .populate("owner", "name email role avatarColor")
+      .populate("members.user", "name email role avatarColor"),
     Project.countDocuments(filter),
   ]);
 

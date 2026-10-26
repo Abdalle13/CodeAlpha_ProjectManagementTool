@@ -1,4 +1,5 @@
-export default function ConfirmDialog({ title, message, confirmLabel = "Confirm", onConfirm, onCancel, danger = false }) {
+export default function ConfirmDialog({ open = true, title, message, confirmLabel = "Confirm", onConfirm, onCancel, danger = false }) {
+  if (!open) return null;
   return (
     <div className="overlay" role="presentation" onClick={onCancel}>
       <div className="modal" style={{ maxWidth: "26rem" }} role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={e => e.stopPropagation()}>
