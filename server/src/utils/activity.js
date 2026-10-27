@@ -1,7 +1,7 @@
-import { Activity } from "../models/Activity.js";
+import { ActivityDB } from "../models/db.js";
 
 export function recordActivity({ project, task = null, actor, action, summary, metadata = {} }) {
-  return Activity.create({ project, task, actor, action, summary, metadata });
+  return ActivityDB.create({ project, task, actor, action, summary, metadata });
 }
 
 export function publicActivity(activity) {

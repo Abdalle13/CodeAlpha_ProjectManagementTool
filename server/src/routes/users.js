@@ -1,8 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
-import { User } from "../models/User.js";
-import { Task } from "../models/Task.js";
-import { Project } from "../models/Project.js";
+import { UserDB, ProjectDB, TaskDB } from "../models/db.js";
 import { publicUser } from "../utils/sanitize.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -12,39 +10,32 @@ router.get(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userFilter = { isActive: true };
+    let ids = null;
 
-    // If not admin, restrict to project teammates (shared projects and owner)
     if (req.user.systemRole !== "admin" && req.user.role !== "admin") {
-      const userProjects = await Project.find({
-        $or: [
-          { owner: req.user._id },
-          { "members.user": req.user._id },
-        ],
-      }).select("members.user owner");
-
+      const projectIds = await ProjectDB.getUserProjectIds(req.user._id);
       const memberIdSet = new Set();
       memberIdSet.add(String(req.user._id));
 
-      userProjects.forEach((p) => {
-        if (p.owner) memberIdSet.add(String(p.owner));
-        (p.members || []).forEach((m) => {
-          if (m.user) memberIdSet.add(String(m.user));
-        });
-      });
-
-      userFilter._id = { $in: Array.from(memberIdSet) };
+      if (projectIds.length > 0) {
+        for (const pid of projectIds) {
+          const proj = await ProjectDB.findById(pid);
+          if (proj) {
+            const ownerId = proj.owner?._id || proj.owner?.id || proj.owner;
+            if (ownerId) memberIdSet.add(String(ownerId));
+            (proj.members || []).forEach((m) => {
+              const uid = m.user?._id || m.user?.id || m.user;
+              if (uid) memberIdSet.add(String(uid));
+            });
+          }
+        }
+      }
+      ids = Array.from(memberIdSet);
     }
 
-    const users = await User.find(userFilter).sort({ name: 1 });
+    const users = await UserDB.findAll({ isActive: true, ids: ids || undefined });
     const userIds = users.map((u) => u._id);
-
-    // Get active task counts for each user
-    const taskCounts = await Task.aggregate([
-      { $match: { assignee: { $in: userIds }, status: { $nin: ["completed", "done"] } } },
-      { $group: { _id: "$assignee", count: { $sum: 1 } } },
-    ]);
-    const countMap = Object.fromEntries(taskCounts.map((tc) => [String(tc._id), tc.count]));
+    const countMap = userIds.length > 0 ? await TaskDB.getAssigneeCounts(userIds) : {};
 
     const items = users.map((u) => ({
       ...publicUser(u),

@@ -1,5 +1,5 @@
 import { env } from "../config/env.js";
-import { User } from "../models/User.js";
+import { UserDB } from "../models/db.js";
 import { AppError } from "../utils/AppError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { verifyAuthToken } from "../utils/tokens.js";
@@ -14,7 +14,7 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
   }
 
   const payload = verifyAuthToken(token);
-  const user = await User.findById(payload.sub);
+  const user = await UserDB.findById(payload.sub);
   if (!user || !user.isActive) {
     throw new AppError("Please sign in to continue.", 401, "UNAUTHORIZED");
   }
