@@ -1,229 +1,153 @@
-import mongoose from "mongoose";
-import { Activity } from "../models/Activity.js";
-import { Comment } from "../models/Comment.js";
-import { Task } from "../models/Task.js";
-import { Project } from "../models/Project.js";
+import { ActivityDB, CommentDB, TaskDB, ProjectDB } from "../models/db.js";
 import { AppError } from "../utils/AppError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { publicActivity } from "../utils/activity.js";
 import { publicComment } from "../utils/commentView.js";
 import { parsePagination } from "../utils/pagination.js";
 
-async function loadProjectTask(projectId, taskId) {
-  if (!mongoose.isValidObjectId(taskId)) throw new AppError("Task not found.", 404, "NOT_FOUND");
-  const task = await Task.findOne({ _id: taskId, project: projectId });
-  if (!task) throw new AppError("Task not found.", 404, "NOT_FOUND");
-  return task;
-}
-
 export const listTaskComments = asyncHandler(async (req, res) => {
-  const task = await loadProjectTask(req.project._id, req.params.taskId);
-  const { page, limit, skip } = parsePagination(req.query);
-  const [comments, total] = await Promise.all([
-    Comment.find({ task: task._id }).sort({ createdAt: 1 }).skip(skip).limit(limit).populate("author", "name"),
-    Comment.countDocuments({ task: task._id }),
-  ]);
+  const { page, limit } = parsePagination(req.query);
+  const { items, total } = await CommentDB.findByTask(req.params.taskId, { page, limit });
   res.json({
     success: true,
     data: {
-      items: comments.map(publicComment),
+      items: items.map(publicComment),
       pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
     },
   });
 });
 
 export const createTaskComment = asyncHandler(async (req, res) => {
-  const task = await loadProjectTask(req.project._id, req.params.taskId);
   let body = "";
-  if (typeof req.body === "string") {
-    body = req.body.trim();
-  } else if (req.body && typeof req.body.body === "string") {
-    body = req.body.body.trim();
-  } else if (req.body && typeof req.body.content === "string") {
-    body = req.body.content.trim();
-  }
-  if (!body) {
-    throw new AppError("Comment cannot be empty.", 400, "VALIDATION_ERROR");
-  }
-  if (body.length > 2000) {
-    throw new AppError("Comment must be under 2000 characters.", 400, "VALIDATION_ERROR");
-  }
+  if (typeof req.body === "string") body = req.body.trim();
+  else if (req.body?.body) body = String(req.body.body).trim();
+  else if (req.body?.content) body = String(req.body.content).trim();
 
-  const comment = await Comment.create({
+  if (!body) throw new AppError("Comment cannot be empty.", 400, "VALIDATION_ERROR");
+  if (body.length > 2000) throw new AppError("Comment must be under 2000 characters.", 400, "VALIDATION_ERROR");
+
+  const comment = await CommentDB.create({
     project: req.project._id,
-    task: task._id,
+    task: req.params.taskId,
     author: req.user._id,
     body,
-    content: body,
   });
-  await Activity.create({
+
+  await ActivityDB.create({
     project: req.project._id,
-    task: task._id,
+    task: req.params.taskId,
     user: req.user._id,
     actor: req.user._id,
     action: "comment.created",
-    summary: req.user.name + " commented on " + (task.title || "task"),
+    summary: req.user.name + " commented",
     description: req.user.name + " commented: " + body.slice(0, 80),
   });
 
-  const populated = await Comment.findById(comment._id).populate("author", "name");
-  res.status(201).json({ success: true, data: { comment: publicComment(populated) } });
+  res.status(201).json({ success: true, data: { comment: publicComment(comment) } });
 });
 
 export const deleteTaskComment = asyncHandler(async (req, res) => {
-  const task = await loadProjectTask(req.project._id, req.params.taskId);
-  if (!mongoose.isValidObjectId(req.params.commentId)) {
-    throw new AppError("Comment not found.", 404, "NOT_FOUND");
-  }
-  const comment = await Comment.findOne({
-    _id: req.params.commentId,
-    task: task._id,
-    project: req.project._id,
+  const comment = await CommentDB.findOne({
+    id: req.params.commentId,
+    task_id: req.params.taskId,
+    project_id: req.project._id,
   });
-  if (!comment) {
-    throw new AppError("Comment not found.", 404, "NOT_FOUND");
-  }
+  if (!comment) throw new AppError("Comment not found.", 404, "NOT_FOUND");
 
-  const isAuthor = comment.author && (comment.author.equals ? comment.author.equals(req.user._id) : String(comment.author) === String(req.user._id));
+  const authorId = String(comment.author?._id || comment.author || "");
+  const isAuthor = authorId === String(req.user._id);
   const isGlobalAdmin = req.user.systemRole === "admin" || req.user.role === "admin";
 
-  if (!isAuthor && !isGlobalAdmin) {
-    throw new AppError("Only the author of this comment can delete it.", 403, "FORBIDDEN");
-  }
+  if (!isAuthor && !isGlobalAdmin) throw new AppError("Only the author of this comment can delete it.", 403, "FORBIDDEN");
 
-  await comment.deleteOne();
-
-  res.json({
-    success: true,
-    data: { message: "Comment deleted successfully." },
-  });
+  await CommentDB.delete(comment._id);
+  res.json({ success: true, data: { message: "Comment deleted successfully." } });
 });
 
 export const listProjectActivity = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query);
-  const filter = { project: req.project._id };
-  if (req.query.taskId !== undefined) {
-    if (!mongoose.isValidObjectId(req.query.taskId)) {
-      throw new AppError("Task not found.", 404, "NOT_FOUND");
-    }
-    filter.task = req.query.taskId;
-  }
-  const [activities, total] = await Promise.all([
-    Activity.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate("project", "name")
-      .populate("task", "title")
-      .populate("actor", "name email")
-      .populate("user", "name email"),
-    Activity.countDocuments(filter),
-  ]);
+  const { page, limit } = parsePagination(req.query);
+  const { items, total } = await ActivityDB.findByProject(req.project._id, {
+    taskId: req.query.taskId || undefined,
+    page,
+    limit,
+  });
   res.json({
     success: true,
     data: {
-      items: activities.map(publicActivity),
+      items: items.map(publicActivity),
       pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
     },
   });
 });
 
 export const getDashboard = asyncHandler(async (req, res) => {
-  const projectFilter = req.user.systemRole === "admin" ? {} : { "members.user": req.user._id };
-  const projects = await Project.find(projectFilter)
-    .select("name status dueDate")
-    .sort({ updatedAt: -1 });
-  const projectIds = projects.map((project) => project._id);
-  const accessibleTaskFilter = { project: { $in: projectIds } };
+  const isAdmin = req.user.systemRole === "admin" || req.user.role === "admin";
+  let projectIds;
+
+  if (isAdmin) {
+    const { items } = await ProjectDB.findAll({ isAdmin: true, page: 1, limit: 1000 });
+    projectIds = items.map(p => String(p._id));
+  } else {
+    projectIds = await ProjectDB.getUserProjectIds(req.user._id);
+  }
+
+  if (projectIds.length === 0) {
+    return res.json({
+      success: true,
+      data: {
+        metrics: { totalProjects: 0, totalTasks: 0, assignedToMe: 0, inProgress: 0, completed: 0, overdue: 0, upcoming: 0 },
+        taskStatus: [], taskPriority: [], projectProgress: [], dueSoon: [],
+      },
+    });
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const nextWeek = new Date(today);
   nextWeek.setDate(nextWeek.getDate() + 7);
 
-  const [
-    inProgress,
-    completed,
-    assigned,
-    overdue,
-    upcoming,
-    statusCounts,
-    priorityCounts,
-    dueSoonTasks,
-    projectTaskAgg,
-  ] = await Promise.all([
-    Task.countDocuments({ ...accessibleTaskFilter, status: "in_progress" }),
-    Task.countDocuments({ ...accessibleTaskFilter, status: { $in: ["done", "completed"] } }),
-    Task.countDocuments({ ...accessibleTaskFilter, assignee: req.user._id, status: { $nin: ["done", "completed"] } }),
-    Task.countDocuments({ ...accessibleTaskFilter, dueDate: { $lt: today }, status: { $nin: ["done", "completed"] } }),
-    Task.countDocuments({ ...accessibleTaskFilter, dueDate: { $gte: today, $lte: nextWeek }, status: { $nin: ["done", "completed"] } }),
-    Task.aggregate([
-      { $match: accessibleTaskFilter },
-      { $group: { _id: "$status", count: { $sum: 1 } } },
-    ]),
-    Task.aggregate([
-      { $match: accessibleTaskFilter },
-      { $group: { _id: "$priority", count: { $sum: 1 } } },
-    ]),
-    Task.find({ ...accessibleTaskFilter, dueDate: { $ne: null }, status: { $nin: ["done", "completed"] } })
-      .sort({ dueDate: 1 })
-      .limit(8)
-      .populate("project", "name")
-      .populate("assignee", "name"),
-    Task.aggregate([
-      { $match: accessibleTaskFilter },
-      {
-        $group: {
-          _id: "$project",
-          total: { $sum: 1 },
-          completed: {
-            $sum: { $cond: [{ $in: ["$status", ["done", "completed"]] }, 1, 0] },
-          },
-        },
-      },
-    ]),
+  const [totalTasks, inProgress, completed, assignedToMe, overdue, upcoming, taskStatus, taskPriority, projectTaskAgg, dueSoonTasks] = await Promise.all([
+    TaskDB.countDocuments({ project_ids: projectIds }),
+    TaskDB.countDocuments({ project_ids: projectIds, status: "in_progress" }),
+    TaskDB.countDocuments({ project_ids: projectIds, statuses: ["done", "completed"] }),
+    TaskDB.countDocuments({ project_ids: projectIds, assignee_id: req.user._id, excludeStatuses: ["done", "completed"] }),
+    TaskDB.countDocuments({ project_ids: projectIds, dueBefore: today, excludeStatuses: ["done", "completed"] }),
+    TaskDB.countDocuments({ project_ids: projectIds, dueBetween: { from: today, to: nextWeek }, excludeStatuses: ["done", "completed"] }),
+    TaskDB.getGroupedStatusCounts(projectIds),
+    TaskDB.getGroupedPriorityCounts(projectIds),
+    TaskDB.getProjectTaskAgg(projectIds),
+    TaskDB.getDueSoon(projectIds, 8),
   ]);
 
-  const projectMap = Object.fromEntries(
-    projectTaskAgg.map((pt) => [
-      String(pt._id),
-      { total: pt.total, completed: pt.completed },
-    ])
-  );
+  const { items: projects } = isAdmin
+    ? await ProjectDB.findAll({ isAdmin: true, page: 1, limit: 6 })
+    : await ProjectDB.findAll({ userId: req.user._id, page: 1, limit: 6 });
 
-  const projectProgress = projects.slice(0, 6).map((p) => {
-    const stats = projectMap[String(p._id)] || { total: 0, completed: 0 };
-    const pct = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+  const projectProgress = projects.slice(0, 6).map(p => {
+    const stats = projectTaskAgg[String(p._id)] || { total: 0, completed: 0 };
     return {
       id: String(p._id),
       name: p.name,
       total: stats.total,
       completed: stats.completed,
-      progress: pct,
+      progress: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0,
     };
   });
 
   res.json({
     success: true,
     data: {
-      metrics: {
-        totalProjects: projects.length,
-        totalTasks: await Task.countDocuments(accessibleTaskFilter),
-        assignedToMe: assigned,
-        inProgress,
-        completed,
-        overdue,
-        upcoming,
-      },
-      taskStatus: statusCounts.map(({ _id, count }) => ({ status: _id || "todo", count })),
-      taskPriority: priorityCounts.map(({ _id, count }) => ({ priority: _id || "medium", count })),
+      metrics: { totalProjects: projectIds.length, totalTasks, assignedToMe, inProgress, completed, overdue, upcoming },
+      taskStatus,
+      taskPriority,
       projectProgress,
-      dueSoon: dueSoonTasks.map((task) => ({
+      dueSoon: dueSoonTasks.map(task => ({
         id: String(task._id),
         title: task.title,
         status: task.status,
         dueDate: task.dueDate,
-        project: task.project ? { id: String(task.project._id), name: task.project.name } : null,
-        assignee: task.assignee ? { id: String(task.assignee._id), name: task.assignee.name } : null,
+        project: task.project ? { id: String(task.project._id || task.project), name: task.project.name } : null,
+        assignee: task.assignee ? { id: String(task.assignee._id || task.assignee), name: task.assignee.name } : null,
       })),
     },
   });

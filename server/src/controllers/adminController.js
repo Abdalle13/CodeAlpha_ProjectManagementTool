@@ -1,16 +1,11 @@
-import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { Buffer } from "node:buffer";
 import { timingSafeEqual } from "node:crypto";
 import { env } from "../config/env.js";
-import { Project } from "../models/Project.js";
-import { Task } from "../models/Task.js";
-import { User } from "../models/User.js";
-import { Comment } from "../models/Comment.js";
-import { Activity } from "../models/Activity.js";
+import { UserDB, ProjectDB, TaskDB, CommentDB, ActivityDB } from "../models/db.js";
 import { AppError } from "../utils/AppError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { parsePagination, escapeRegex } from "../utils/pagination.js";
+import { parsePagination } from "../utils/pagination.js";
 import { publicProject } from "../utils/projectView.js";
 import { publicUser } from "../utils/sanitize.js";
 
@@ -32,14 +27,15 @@ export const bootstrapSystemAdmin = asyncHandler(async (req, res) => {
     throw new AppError("System administration has already been initialized.", 409, "CONFLICT");
   }
 
-  req.user.systemRole = "admin";
-  req.user.role = "admin";
-  await req.user.save();
-  res.json({ success: true, data: { user: publicUser(req.user) } });
+  const updated = await UserDB.update(req.user._id, {
+    systemRole: "admin",
+    role: "admin",
+  });
+  res.json({ success: true, data: { user: publicUser(updated) } });
 });
 
 export const listUsers = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query);
+  const { page, limit } = parsePagination(req.query);
   const q = String(req.query.q || "").trim();
   if (q.length > 100) {
     throw new AppError("Search query must be 100 characters or fewer.", 400, "VALIDATION_ERROR");
@@ -47,29 +43,18 @@ export const listUsers = asyncHandler(async (req, res) => {
   const roleFilter = req.query.role;
   const statusFilter = req.query.status;
 
-  const filter = {};
-  if (q) {
-    const escaped = escapeRegex(q);
-    filter.$or = [
-      { name: { $regex: escaped, $options: "i" } },
-      { email: { $regex: escaped, $options: "i" } },
-    ];
-  }
-  if (roleFilter && ["admin", "manager", "member", "user"].includes(roleFilter)) {
-    filter.$or = [{ role: roleFilter }, { systemRole: roleFilter }];
-  }
-  if (statusFilter === "active") filter.isActive = true;
-  if (statusFilter === "inactive") filter.isActive = false;
-
-  const [users, total] = await Promise.all([
-    User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
-    User.countDocuments(filter),
-  ]);
+  const { items, total } = await UserDB.findPaginated({
+    search: q,
+    role: roleFilter,
+    status: statusFilter,
+    page,
+    limit,
+  });
 
   res.json({
     success: true,
     data: {
-      items: users.map(publicUser),
+      items: items.map(publicUser),
       pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
     },
   });
@@ -83,28 +68,26 @@ export const updateUserRole = asyncHandler(async (req, res) => {
     throw new AppError("Invalid role specified.", 400, "VALIDATION_ERROR");
   }
 
-  const user = await User.findById(userId);
+  const user = await UserDB.findById(userId);
   if (!user) {
     throw new AppError("User not found.", 404, "NOT_FOUND");
   }
 
   if ((user.role === "admin" || user.systemRole === "admin") && role !== "admin") {
-    const adminCount = await User.countDocuments({
-      $or: [{ role: "admin" }, { systemRole: "admin" }],
-      isActive: true,
-    });
+    const adminCount = await UserDB.countAdmins();
     if (adminCount <= 1) {
       throw new AppError("Cannot demote the last remaining active administrator.", 400, "OPERATION_NOT_ALLOWED");
     }
   }
 
-  user.role = role;
-  user.systemRole = role === "admin" ? "admin" : "user";
-  await user.save();
+  const updated = await UserDB.update(userId, {
+    role,
+    systemRole: role === "admin" ? "admin" : "user",
+  });
 
   res.json({
     success: true,
-    data: { user: publicUser(user) },
+    data: { user: publicUser(updated) },
   });
 });
 
@@ -122,7 +105,7 @@ export const createAdminUser = asyncHandler(async (req, res) => {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  const existing = await User.findOne({ email: normalizedEmail });
+  const existing = await UserDB.findOne({ email: normalizedEmail });
   if (existing) {
     throw new AppError("An account with this email address already exists.", 409, "CONFLICT");
   }
@@ -132,19 +115,19 @@ export const createAdminUser = asyncHandler(async (req, res) => {
     throw new AppError("Invalid role specified.", 400, "VALIDATION_ERROR");
   }
 
-  const assignedSystemRole = (assignedRole === "admin" || systemRole === "admin") ? "admin" : "user";
+  const assignedSystemRole = assignedRole === "admin" || systemRole === "admin" ? "admin" : "user";
   const passwordHash = await bcrypt.hash(password, 12);
 
   const colors = ["#4f6ef7", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#6366f1"];
   const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-  const user = await User.create({
+  const user = await UserDB.create({
     name: name.trim(),
     email: normalizedEmail,
     passwordHash,
     role: assignedRole,
     systemRole: assignedSystemRole,
-    title: title ? String(title).trim() : (assignedRole === "admin" ? "System Administrator" : "Team Member"),
+    title: title ? String(title).trim() : assignedRole === "admin" ? "System Administrator" : "Team Member",
     avatarColor: randomColor,
     isActive: Boolean(isActive),
   });
@@ -156,20 +139,20 @@ export const createAdminUser = asyncHandler(async (req, res) => {
 });
 
 export const updateUser = asyncHandler(async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.userId)) {
-    throw new AppError("User not found.", 404, "NOT_FOUND");
-  }
+  const { userId } = req.params;
   const { name, email, systemRole, role, isActive, title, password } = req.body || {};
 
-  const user = await User.findById(req.params.userId);
+  const user = await UserDB.findById(userId);
   if (!user) throw new AppError("User not found.", 404, "NOT_FOUND");
+
+  const updates = {};
 
   // Name validation & update
   if (name !== undefined) {
     if (typeof name !== "string" || name.trim().length < 2) {
       throw new AppError("Name must be at least 2 characters.", 400, "VALIDATION_ERROR");
     }
-    user.name = name.trim();
+    updates.name = name.trim();
   }
 
   // Email validation & update
@@ -179,11 +162,11 @@ export const updateUser = asyncHandler(async (req, res) => {
       throw new AppError("A valid email address is required.", 400, "VALIDATION_ERROR");
     }
     if (normalized !== user.email) {
-      const existing = await User.findOne({ email: normalized, _id: { $ne: user._id } });
-      if (existing) {
+      const existing = await UserDB.findOne({ email: normalized });
+      if (existing && String(existing._id) !== String(user._id)) {
         throw new AppError("Email is already taken by another account.", 409, "CONFLICT");
       }
-      user.email = normalized;
+      updates.email = normalized;
     }
   }
 
@@ -198,31 +181,28 @@ export const updateUser = asyncHandler(async (req, res) => {
     ((targetRole && targetRole !== "admin") || isActive === false);
 
   if (deactivatingAdmin) {
-    const activeAdminCount = await User.countDocuments({
-      $or: [{ systemRole: "admin" }, { role: "admin" }],
-      isActive: true,
-    });
+    const activeAdminCount = await UserDB.countAdmins();
     if (activeAdminCount <= 1) {
       throw new AppError("The last active system admin cannot be demoted or deactivated.", 400, "VALIDATION_ERROR");
     }
   }
 
   if (targetRole !== undefined) {
-    user.systemRole = targetRole === "admin" ? "admin" : "user";
-    user.role = targetRole;
+    updates.systemRole = targetRole === "admin" ? "admin" : "user";
+    updates.role = targetRole;
   }
   if (isActive !== undefined) {
-    user.isActive = Boolean(isActive);
+    updates.isActive = Boolean(isActive);
   }
   if (title !== undefined) {
-    user.title = String(title).trim();
+    updates.title = String(title).trim();
   }
   if (password && typeof password === "string" && password.trim().length >= 6) {
-    user.passwordHash = await bcrypt.hash(password.trim(), 12);
+    updates.passwordHash = await bcrypt.hash(password.trim(), 12);
   }
 
-  await user.save();
-  res.json({ success: true, data: { user: publicUser(user) } });
+  const updated = await UserDB.update(userId, updates);
+  res.json({ success: true, data: { user: publicUser(updated) } });
 });
 
 export const toggleUserStatus = asyncHandler(async (req, res) => {
@@ -232,66 +212,50 @@ export const toggleUserStatus = asyncHandler(async (req, res) => {
     throw new AppError("You cannot deactivate your own administrative account.", 400, "OPERATION_NOT_ALLOWED");
   }
 
-  const user = await User.findById(userId);
+  const user = await UserDB.findById(userId);
   if (!user) {
     throw new AppError("User not found.", 404, "NOT_FOUND");
   }
 
   if (user.isActive && (user.systemRole === "admin" || user.role === "admin")) {
-    const activeAdminCount = await User.countDocuments({
-      $or: [{ systemRole: "admin" }, { role: "admin" }],
-      isActive: true,
-    });
+    const activeAdminCount = await UserDB.countAdmins();
     if (activeAdminCount <= 1) {
       throw new AppError("The last active system admin cannot be deactivated.", 400, "OPERATION_NOT_ALLOWED");
     }
   }
 
-  user.isActive = !user.isActive;
-  await user.save();
+  const updated = await UserDB.update(userId, { isActive: !user.isActive });
 
   res.json({
     success: true,
-    data: { user: publicUser(user) },
+    data: { user: publicUser(updated) },
   });
 });
 
 export const deleteUser = asyncHandler(async (req, res) => {
   const { userId } = req.params;
-  if (!mongoose.isValidObjectId(userId)) {
-    throw new AppError("User not found.", 404, "NOT_FOUND");
-  }
 
   if (String(req.user._id) === String(userId)) {
     throw new AppError("You cannot delete your own account.", 400, "OPERATION_NOT_ALLOWED");
   }
 
-  const user = await User.findById(userId);
+  const user = await UserDB.findById(userId);
   if (!user) throw new AppError("User not found.", 404, "NOT_FOUND");
 
   if (user.systemRole === "admin" || user.role === "admin") {
-    const activeAdminCount = await User.countDocuments({
-      $or: [{ systemRole: "admin" }, { role: "admin" }],
-      isActive: true,
-    });
+    const activeAdminCount = await UserDB.countAdmins();
     if (activeAdminCount <= 1) {
       throw new AppError("Cannot delete the last remaining active administrator.", 400, "OPERATION_NOT_ALLOWED");
     }
   }
 
   // Remove references in project members
-  await Project.updateMany(
-    { "members.user": user._id },
-    { $pull: { members: { user: user._id } } }
-  );
+  await ProjectDB.removeUserFromAllProjects(userId);
 
   // Unassign tasks assigned to this user
-  await Task.updateMany(
-    { assignee: user._id },
-    { $unset: { assignee: "" } }
-  );
+  await TaskDB.unassignUser(userId);
 
-  await user.deleteOne();
+  await UserDB.delete(userId);
 
   res.json({
     success: true,
@@ -300,47 +264,27 @@ export const deleteUser = asyncHandler(async (req, res) => {
 });
 
 export const listAllProjects = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query);
+  const { page, limit } = parsePagination(req.query);
   const q = String(req.query.q || "").trim();
 
-  const filter = {};
-  if (q) {
-    const escaped = escapeRegex(q);
-    filter.$or = [
-      { name: { $regex: escaped, $options: "i" } },
-      { key: { $regex: escaped, $options: "i" } },
-    ];
-  }
-
-  const [projects, total] = await Promise.all([
-    Project.find(filter)
-      .populate("owner", "name email role avatarColor")
-      .populate("members.user", "name email role avatarColor")
-      .sort({ updatedAt: -1 })
-      .skip(skip)
-      .limit(limit),
-    Project.countDocuments(filter),
-  ]);
+  const { items, total } = await ProjectDB.findAllAdmin({ search: q, page, limit });
 
   res.json({
     success: true,
     data: {
-      items: projects.map((p) => publicProject(p, req.user._id, "admin")),
+      items: items.map((p) => publicProject(p, req.user._id, "admin")),
       pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
     },
   });
 });
 
 export const deleteAnyProject = asyncHandler(async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.projectId)) {
-    throw new AppError("Project not found.", 404, "NOT_FOUND");
-  }
-  const project = await Project.findById(req.params.projectId);
+  const project = await ProjectDB.findById(req.params.projectId);
   if (!project) throw new AppError("Project not found.", 404, "NOT_FOUND");
-  await Task.deleteMany({ project: project._id });
-  await Comment.deleteMany({ project: project._id });
-  await Activity.deleteMany({ project: project._id });
-  await project.deleteOne();
+  await TaskDB.deleteMany({ project_id: project._id });
+  await CommentDB.deleteMany({ project_id: project._id });
+  await ActivityDB.deleteMany({ project_id: project._id });
+  await ProjectDB.delete(project._id);
   res.json({ success: true, data: { project: null } });
 });
 
@@ -356,28 +300,19 @@ export const getSystemStats = asyncHandler(async (_req, res) => {
     taskPriorityCounts,
     roleCounts,
   ] = await Promise.all([
-    User.countDocuments({}),
-    User.countDocuments({ isActive: true }),
-    Project.countDocuments({}),
-    Task.countDocuments({}),
-    Task.countDocuments({ status: { $in: ["completed", "done"] } }),
-    Project.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
-    Task.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
-    Task.aggregate([{ $group: { _id: "$priority", count: { $sum: 1 } } }]),
-    User.aggregate([{ $group: { _id: "$systemRole", count: { $sum: 1 } } }]),
+    UserDB.countDocuments({}),
+    UserDB.countDocuments({ isActive: true }),
+    ProjectDB.countDocuments({}),
+    TaskDB.countDocuments({}),
+    TaskDB.countDocuments({ statuses: ["completed", "done"] }),
+    ProjectDB.getGroupedStatusCounts(),
+    TaskDB.getGroupedStatusCounts(),
+    TaskDB.getGroupedPriorityCounts(),
+    UserDB.getGroupedRoleCounts(),
   ]);
 
-  const recentUsers = await User.find({})
-    .sort({ createdAt: -1 })
-    .limit(6)
-    .select("name email role systemRole createdAt isActive");
-
-  const recentActivities = await Activity.find({})
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .populate("user", "name email")
-    .populate("actor", "name email")
-    .populate("project", "name key");
+  const recentUsers = await UserDB.getRecentUsers(6);
+  const recentActivities = await ActivityDB.getRecent(10);
 
   res.json({
     success: true,
@@ -393,19 +328,19 @@ export const getSystemStats = asyncHandler(async (_req, res) => {
       },
       charts: {
         projectStatus: projectStatusCounts.map((c) => ({
-          status: c._id || "active",
+          status: c.status || "active",
           count: c.count,
         })),
         taskStatus: taskStatusCounts.map((c) => ({
-          status: c._id || "todo",
+          status: c.status || "todo",
           count: c.count,
         })),
         taskPriority: taskPriorityCounts.map((c) => ({
-          priority: c._id || "medium",
+          priority: c.priority || "medium",
           count: c.count,
         })),
         userRoles: roleCounts.map((c) => ({
-          role: c._id || "user",
+          role: c.role || "user",
           count: c.count,
         })),
       },
@@ -416,23 +351,13 @@ export const getSystemStats = asyncHandler(async (_req, res) => {
 });
 
 export const listSystemActivities = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query);
-  const [activities, total] = await Promise.all([
-    Activity.find({})
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate("project", "name key")
-      .populate("task", "title taskCode")
-      .populate("actor", "name email")
-      .populate("user", "name email"),
-    Activity.countDocuments({}),
-  ]);
+  const { page, limit } = parsePagination(req.query);
+  const { items, total } = await ActivityDB.findAll({ page, limit });
 
   res.json({
     success: true,
     data: {
-      items: activities,
+      items,
       pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
     },
   });

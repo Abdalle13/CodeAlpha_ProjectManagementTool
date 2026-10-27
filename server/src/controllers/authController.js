@@ -1,15 +1,11 @@
 import crypto from "crypto";
 import { sendPasswordResetEmail } from "../utils/mailer.js";
 import bcrypt from "bcryptjs";
-import { User } from "../models/User.js";
+import { UserDB } from "../models/db.js";
 import { AppError } from "../utils/AppError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { isValidEmail, normalizeEmail, publicUser } from "../utils/sanitize.js";
 import { clearAuthCookie, setAuthCookie, signAuthToken } from "../utils/tokens.js";
-
-function escapeRegex(text) {
-  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-}
 
 function validatePassword(password) {
   if (typeof password !== "string" || password.length < 8 || password.length > 72) {
@@ -35,13 +31,13 @@ export const register = asyncHandler(async (req, res) => {
   }
   validatePassword(password);
 
-  const existing = await User.findOne({ email });
+  const existing = await UserDB.findOne({ email });
   if (existing) {
     throw new AppError("An account with this email already exists.", 409, "CONFLICT");
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await User.create({ name, email, passwordHash });
+  const user = await UserDB.create({ name, email, passwordHash });
   const token = signAuthToken(user.id);
   setAuthCookie(res, token);
 
@@ -60,18 +56,20 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   const isEmail = isValidEmail(loginInput);
-  const query = isEmail
-    ? { email: normalizeEmail(loginInput) }
-    : { name: { $regex: new RegExp(`^${escapeRegex(loginInput)}$`, "i") } };
+  let user;
+  if (isEmail) {
+    user = await UserDB.findOne({ email: normalizeEmail(loginInput) }, { withPassword: true });
+  } else {
+    user = await UserDB.findByName(loginInput);
+    if (user) {
+      user = await UserDB.findById(user.id, { withPassword: true });
+    }
+  }
 
-  const user = await User.findOne(query).select("+passwordHash");
   if (!user) {
     throw new AppError(
-      isEmail
-        ? "No account found with this email address."
-        : "No account found with this username.",
-      404,
-      "NOT_FOUND"
+      isEmail ? "No account found with this email address." : "No account found with this username.",
+      404, "NOT_FOUND"
     );
   }
   if (!user.isActive) {
@@ -85,25 +83,16 @@ export const login = asyncHandler(async (req, res) => {
   const token = signAuthToken(user.id);
   setAuthCookie(res, token);
 
-  res.json({
-    success: true,
-    data: { user: publicUser(user), token },
-  });
+  res.json({ success: true, data: { user: publicUser(user), token } });
 });
 
 export const logout = asyncHandler(async (_req, res) => {
   clearAuthCookie(res);
-  res.json({
-    success: true,
-    data: { user: null },
-  });
+  res.json({ success: true, data: { user: null } });
 });
 
 export const me = asyncHandler(async (req, res) => {
-  res.json({
-    success: true,
-    data: { user: publicUser(req.user) },
-  });
+  res.json({ success: true, data: { user: publicUser(req.user) } });
 });
 
 export const changePassword = asyncHandler(async (req, res) => {
@@ -113,83 +102,56 @@ export const changePassword = asyncHandler(async (req, res) => {
   }
   validatePassword(newPassword);
 
-  const user = await User.findById(req.user._id).select("+passwordHash");
-  if (!user) {
-    throw new AppError("User not found.", 404, "NOT_FOUND");
-  }
+  const user = await UserDB.findById(req.user._id, { withPassword: true });
+  if (!user) throw new AppError("User not found.", 404, "NOT_FOUND");
 
   const matches = await bcrypt.compare(currentPassword, user.passwordHash);
-  if (!matches) {
-    throw new AppError("Current password does not match.", 400, "INVALID_PASSWORD");
-  }
+  if (!matches) throw new AppError("Current password does not match.", 400, "INVALID_PASSWORD");
 
-  user.passwordHash = await bcrypt.hash(newPassword, 12);
-  await user.save();
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await UserDB.update(req.user._id, { passwordHash });
 
-  res.json({
-    success: true,
-    data: { message: "Password updated successfully." },
-  });
+  res.json({ success: true, data: { message: "Password updated successfully." } });
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {
   const { name, title } = req.body;
-  const user = await User.findById(req.user._id);
-  if (!user) {
-    throw new AppError("User not found.", 404, "NOT_FOUND");
-  }
+  const updates = {};
+  if (name !== undefined) updates.name = validateName(name);
+  if (title !== undefined) updates.title = String(title).trim().slice(0, 50);
 
-  if (name !== undefined) user.name = validateName(name);
-  if (title !== undefined) user.title = String(title).trim().slice(0, 50);
-
-  await user.save();
-
-  res.json({
-    success: true,
-    data: { user: publicUser(user) },
-  });
+  const updated = await UserDB.update(req.user._id, updates);
+  res.json({ success: true, data: { user: publicUser(updated) } });
 });
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  if (!email) {
-    throw new AppError("Please provide an email address.", 400, "VALIDATION_ERROR");
-  }
+  if (!email) throw new AppError("Please provide an email address.", 400, "VALIDATION_ERROR");
 
   const trimmedEmail = String(email).trim().toLowerCase();
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(trimmedEmail)) {
-    throw new AppError("Please enter a valid email address (e.g. johndoe@gmail.com).", 400, "VALIDATION_ERROR");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    throw new AppError("Please enter a valid email address.", 400, "VALIDATION_ERROR");
   }
 
-  // Real database check: verify user actually exists
-  const user = await User.findOne({ email: trimmedEmail });
-  if (!user) {
-    throw new AppError("No account found with this email address. Please make sure you are registered.", 404, "NOT_FOUND");
-  }
+  const user = await UserDB.findOne({ email: trimmedEmail });
+  if (!user) throw new AppError("No account found with this email address.", 404, "NOT_FOUND");
 
   const resetToken = crypto.randomBytes(32).toString("hex");
   const tokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
 
-  user.resetPasswordToken = tokenHash;
-  user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour
-  await user.save();
+  await UserDB.update(user.id, {
+    resetPasswordToken: tokenHash,
+    resetPasswordExpires: new Date(Date.now() + 3600000),
+  });
 
   try {
-    await sendPasswordResetEmail({
-      to: user.email,
-      resetToken,
-      userName: user.name,
-    });
+    await sendPasswordResetEmail({ to: user.email, resetToken, userName: user.name });
   } catch (err) {
     console.error("Failed to send reset email:", err);
-    throw new AppError("Failed to deliver reset email. Please verify email settings or try again.", 500, "EMAIL_ERROR");
+    throw new AppError("Failed to deliver reset email.", 500, "EMAIL_ERROR");
   }
 
-  res.json({
-    success: true,
-    message: `A password reset link has been sent to ${user.email}. Check your inbox!`,
-  });
+  res.json({ success: true, message: `A password reset link has been sent to ${user.email}.` });
 });
 
 export const resetPassword = asyncHandler(async (req, res) => {
@@ -201,23 +163,21 @@ export const resetPassword = asyncHandler(async (req, res) => {
   validatePassword(password);
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-  const user = await User.findOne({
-    email: String(email).trim().toLowerCase(),
-    resetPasswordToken: tokenHash,
-    resetPasswordExpires: { $gt: new Date() },
-  }).select("+resetPasswordToken +resetPasswordExpires +passwordHash");
+  const user = await UserDB.findOne(
+    { email: String(email).trim().toLowerCase(), reset_password_token: tokenHash },
+    { withReset: true }
+  );
 
-  if (!user) {
+  if (!user || !user.resetPasswordExpires || new Date(user.resetPasswordExpires) < new Date()) {
     throw new AppError("Password reset link is invalid or has expired.", 400, "INVALID_TOKEN");
   }
 
-  user.passwordHash = await bcrypt.hash(password, 12);
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpires = undefined;
-  await user.save();
-
-  res.json({
-    success: true,
-    message: "Password reset successful! You can now sign in with your new password.",
+  const passwordHash = await bcrypt.hash(password, 12);
+  await UserDB.update(user.id, {
+    passwordHash,
+    resetPasswordToken: null,
+    resetPasswordExpires: null,
   });
+
+  res.json({ success: true, message: "Password reset successful! You can now sign in with your new password." });
 });

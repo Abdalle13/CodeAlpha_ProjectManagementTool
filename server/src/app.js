@@ -93,18 +93,16 @@ export default async function handler(request, response) {
   try {
     if (isProduction()) validateProductionEnv();
 
-    if (env.mongodbUri) {
-      connectionPromise ||= connectDatabase().catch((err) => {
-        connectionPromise = undefined;
-        throw err;
-      });
+    connectionPromise ||= connectDatabase().catch((err) => {
+      connectionPromise = undefined;
+      throw err;
+    });
 
-      if (url === "/" || url === "/api/health") {
-        // Allow root ping and health check to respond with current status without blocking
-        connectionPromise.catch((err) => console.warn("Database connection issue during status ping:", err.message));
-      } else {
-        await connectionPromise;
-      }
+    if (url === "/" || url === "/api/health") {
+      // Allow root ping and health check to respond with current status without blocking
+      connectionPromise.catch((err) => console.warn("Database connection issue during status ping:", err.message));
+    } else {
+      await connectionPromise;
     }
 
     return defaultApp(request, response);

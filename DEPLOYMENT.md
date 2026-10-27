@@ -3,16 +3,17 @@
 This guide walks you through deploying **Taskora** to production:
 - **Backend API**: Deployed to **Vercel** (Express Serverless) or Render / Railway
 - **Frontend App**: Deployed to **Netlify** or **Vercel** (React + Vite)
-- **Database**: **MongoDB Atlas**
+- **Database**: **Supabase** (PostgreSQL) — works globally across any network/device with no IP whitelisting needed!
 
 ---
 
-## 1. MongoDB Atlas Configuration
+## 1. Supabase Database Setup (One-time, 1 minute)
 
-1. In MongoDB Atlas, go to **Network Access** and ensure your hosting platform can connect:
-   - For Vercel Serverless / Netlify: Add `0.0.0.0/0` (Allow access from anywhere) with a strong database user password.
-2. In **Database Access**, verify your database user has `readWrite` permissions on the `taskora` database.
-3. Copy your MongoDB Atlas connection string (format: `mongodb+srv://<username>:<password>@cluster0.mongodb.net/taskora?retryWrites=true&w=majority`).
+1. Open your project on [Supabase](https://supabase.com/dashboard).
+2. On the left sidebar, click the **SQL Editor** tab (terminal icon `>_`).
+3. Click **"New query"**.
+4. Open [server/supabase_schema.sql](file:///c:/Users/zekov/Desktop/CodeAlpha_ProjectManagementTool/server/supabase_schema.sql) in this repo, copy its entire contents, paste it into the Supabase SQL Editor, and click **"Run"**.
+5. All 6 tables (`users`, `projects`, `project_members`, `tasks`, `comments`, `activities`) will be created instantly with indexes and triggers.
 
 ---
 
@@ -28,7 +29,9 @@ This guide walks you through deploying **Taskora** to production:
 | Variable | Value | Notes |
 |---|---|---|
 | `NODE_ENV` | `production` | Enables production security & optimizations |
-| `MONGODB_URI` | `mongodb+srv://...` | Your MongoDB Atlas connection string |
+| `SUPABASE_URL` | `https://yczjfywqrthxwfvaonac.supabase.co` | Your Supabase project URL |
+| `SUPABASE_SECRET_KEY` | `sb_secret_...` | Supabase secret/service_role key |
+| `SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_...` | Supabase publishable key |
 | `JWT_SECRET` | `tsk_9f3c1a2e7b8d4056af1e9c3b7d20648e5a1c9f3e2b6d40571` | At least 32 characters |
 | `JWT_EXPIRES_IN` | `7d` | Token expiry duration |
 | `CLIENT_ORIGIN` | `https://your-app.netlify.app` | Exact HTTPS URL of your frontend (supports multiple comma-separated URLs) |
@@ -37,9 +40,9 @@ This guide walks you through deploying **Taskora** to production:
 | `SYSTEM_ADMIN_EMAIL` | `admin@gmail.com` | Email address of the primary platform admin |
 | `EMAIL_HOST` | `smtp.gmail.com` | SMTP host for password reset emails |
 | `EMAIL_PORT` | `587` | SMTP port |
-| `EMAIL_USER` | `your-email@gmail.com` | Gmail/SMTP username |
-| `EMAIL_PASS` | `your-app-password` | Gmail App Password (16 characters) |
-| `EMAIL_FROM` | `Taskora <your-email@gmail.com>` | Sender address |
+| `EMAIL_USER` | `cabdale13yare@gmail.com` | Gmail/SMTP username |
+| `EMAIL_PASS` | `qeeiecdlavlbvkxl` | Gmail App Password (16 characters) |
+| `EMAIL_FROM` | `Taskora <cabdale13yare@gmail.com>` | Sender address |
 
 5. Click **Deploy**.
 6. When deployment finishes, copy your Vercel URL (e.g. `https://taskora-api.vercel.app`).

@@ -63,7 +63,8 @@ export function isTest() {
 
 export function validateProductionEnv() {
   const missing = [];
-  if (!env.mongodbUri) missing.push("MONGODB_URI");
+  const hasDb = Boolean(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || env.mongodbUri);
+  if (!hasDb) missing.push("SUPABASE_URL (or MONGODB_URI)");
   if (env.jwtSecret.length < 32 || env.jwtSecret.startsWith("replace-with")) {
     missing.push("JWT_SECRET (at least 32 characters)");
   }
