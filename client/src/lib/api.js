@@ -20,7 +20,7 @@ function resolveApiBaseUrl() {
 const api = axios.create({
   baseURL: resolveApiBaseUrl(),
   withCredentials: true,
-  timeout: 10000,
+  timeout: 45000,
 });
 
 api.interceptors.request.use((config) => {

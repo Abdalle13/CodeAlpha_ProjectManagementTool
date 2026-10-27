@@ -100,19 +100,6 @@ export default async function handler(request, response) {
 
   try {
     if (isProduction()) validateProductionEnv();
-
-    connectionPromise ||= connectDatabase().catch((err) => {
-      connectionPromise = undefined;
-      throw err;
-    });
-
-    if (url === "/" || url === "/api/health") {
-      // Allow root ping and health check to respond with current status without blocking
-      connectionPromise.catch((err) => console.warn("Database connection issue during status ping:", err.message));
-    } else {
-      await connectionPromise;
-    }
-
     return defaultApp(request, response);
   } catch (error) {
     console.error("Taskora API initialization failed:", error.message);
