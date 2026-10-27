@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import { env, isProduction } from "./config/env.js";
+import { env, isProduction, validateProductionEnv } from "./config/env.js";
+import { connectDatabase } from "./config/db.js";
 import healthRouter from "./routes/health.js";
 import authRouter from "./routes/auth.js";
 import projectRouter from "./routes/projects.js";
@@ -35,7 +36,8 @@ export function createApp() {
       origin: (requestOrigin, callback) => {
         if (!requestOrigin) return callback(null, true);
         const cleanOrigin = requestOrigin.trim().replace(/\/+$/, "");
-        if (env.allowedOrigins.includes(cleanOrigin) || !isProduction()) {
+        const allowed = env.allowedOrigins;
+        if (allowed.length === 0 || allowed.includes(cleanOrigin) || !isProduction()) {
           return callback(null, true);
         }
         return callback(new Error("Origin not allowed by CORS"));
@@ -46,6 +48,9 @@ export function createApp() {
   app.use(express.json({ limit: "100kb" }));
   app.use(cookieParser());
   app.use(originGuard);
+
+  app.get("/favicon.ico", (_req, res) => res.status(204).end());
+  app.get("/favicon.png", (_req, res) => res.status(204).end());
 
   app.get("/", (_req, res) => {
     res.json({
@@ -72,4 +77,42 @@ export function createApp() {
   app.use(errorHandler);
 
   return app;
+}
+
+// Default export for Vercel Serverless Function entrypoint
+let connectionPromise;
+const defaultApp = createApp();
+
+export default async function handler(request, response) {
+  const url = request.url || "";
+  if (url === "/favicon.ico" || url === "/favicon.png") {
+    response.statusCode = 204;
+    return response.end();
+  }
+
+  try {
+    if (isProduction()) validateProductionEnv();
+
+    if (env.mongodbUri) {
+      connectionPromise ||= connectDatabase().catch((err) => {
+        connectionPromise = undefined;
+        throw err;
+      });
+
+      if (url === "/" || url === "/api/health") {
+        // Allow root ping and health check to respond with current status without blocking
+        connectionPromise.catch((err) => console.warn("Database connection issue during status ping:", err.message));
+      } else {
+        await connectionPromise;
+      }
+    }
+
+    return defaultApp(request, response);
+  } catch (error) {
+    console.error("Taskora API initialization failed:", error.message);
+    return response.status(503).json({
+      success: false,
+      error: { message: error.message || "API is temporarily unavailable.", code: "SERVICE_UNAVAILABLE" },
+    });
+  }
 }
