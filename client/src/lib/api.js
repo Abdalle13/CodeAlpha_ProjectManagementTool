@@ -1,7 +1,19 @@
 import axios from "axios";
 
+function resolveApiBaseUrl() {
+  const envUrl = typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL
+    ? String(import.meta.env.VITE_API_URL).trim()
+    : "";
+  if (!envUrl) return "/api";
+  const clean = envUrl.replace(/\/+$/, "");
+  if (clean.startsWith("http://") || clean.startsWith("https://")) {
+    return clean.endsWith("/api") ? clean : `${clean}/api`;
+  }
+  return clean.startsWith("/") ? clean : `/${clean}`;
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  baseURL: resolveApiBaseUrl(),
   withCredentials: true,
   timeout: 10000,
 });

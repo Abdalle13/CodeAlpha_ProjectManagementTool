@@ -18,7 +18,14 @@ export const env = {
     return Number(readEnv("PORT", "5000"));
   },
   get clientOrigin() {
-    return readEnv("CLIENT_ORIGIN", "http://localhost:5173");
+    return readEnv("CLIENT_ORIGIN", "http://localhost:5173").trim().replace(/\/+$/, "");
+  },
+  get allowedOrigins() {
+    const raw = readEnv("CLIENT_ORIGIN", "http://localhost:5173");
+    return raw
+      .split(",")
+      .map((o) => o.trim().replace(/\/+$/, ""))
+      .filter(Boolean);
   },
   get mongodbUri() {
     return readEnv("MONGODB_URI", "");
@@ -54,9 +61,13 @@ export function isTest() {
 export function validateProductionEnv() {
   const missing = [];
   if (!env.mongodbUri) missing.push("MONGODB_URI");
-  if (env.jwtSecret.length < 32 || env.jwtSecret.startsWith("replace-with")) missing.push("JWT_SECRET (at least 32 characters)" );
-  if (!env.clientOrigin || !env.clientOrigin.startsWith("https://") || env.clientOrigin.includes("localhost")) {
-    missing.push("CLIENT_ORIGIN (HTTPS deployed frontend origin)");
+  if (env.jwtSecret.length < 32 || env.jwtSecret.startsWith("replace-with")) {
+    missing.push("JWT_SECRET (at least 32 characters)");
+  }
+  const origins = env.allowedOrigins;
+  const invalidOrigin = origins.some((o) => !o.startsWith("https://") || o.includes("localhost"));
+  if (origins.length === 0 || invalidOrigin) {
+    missing.push("CLIENT_ORIGIN (HTTPS deployed frontend origin, e.g. https://your-site.netlify.app)");
   }
   if (missing.length) {
     throw new Error(`Production environment is incomplete: ${missing.join(", ")}`);

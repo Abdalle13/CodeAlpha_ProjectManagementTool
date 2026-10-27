@@ -18,7 +18,7 @@ Taskora is a modern, enterprise-grade collaborative project management and produ
   - **Task Status Breakdown**: Donut chart visualizing workload distribution across stages.
 - **Executive SaaS Admin Dashboard (Platform Admins)**:
   - System-wide metrics, active user tracking, and project health indicators.
-  - Task velocity area charts and project pipeline distributions.
+  - Task velocity area charts and project pipeline distributions. 
   - User and workspace administration with role assignments.
 
 ### 2. Analytics & Downloadable Reports

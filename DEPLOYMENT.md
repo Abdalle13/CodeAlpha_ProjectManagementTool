@@ -1,51 +1,99 @@
-# Taskora Deployment
+# Taskora Deployment Guide
 
-This repository is prepared for Netlify (React/Vite), Vercel (Express API), and MongoDB Atlas. No hosting account, paid service, or live deployment is included.
+This guide walks you through deploying **Taskora** to production:
+- **Backend API**: Deployed to **Vercel** (Express Serverless) or Render / Railway
+- **Frontend App**: Deployed to **Netlify** or **Vercel** (React + Vite)
+- **Database**: **MongoDB Atlas**
 
-## MongoDB Atlas
+---
 
-1. Create a MongoDB Atlas free-tier cluster if available in your region.
-2. Create a database user and copy the connection string for the Taskora database.
-3. Add the Vercel deployment's outbound access as allowed by your Atlas network-access policy. Avoid opening access broadly unless necessary; Atlas/Vercel network options can vary by plan.
-4. Set `MONGODB_URI` in Vercel to the private connection string. Never put it in the client environment or commit it.
+## 1. MongoDB Atlas Configuration
 
-## Vercel API
+1. In MongoDB Atlas, go to **Network Access** and ensure your hosting platform can connect:
+   - For Vercel Serverless / Netlify: Add `0.0.0.0/0` (Allow access from anywhere) with a strong database user password.
+2. In **Database Access**, verify your database user has `readWrite` permissions on the `taskora` database.
+3. Copy your MongoDB Atlas connection string (format: `mongodb+srv://<username>:<password>@cluster0.mongodb.net/taskora?retryWrites=true&w=majority`).
 
-1. Import the repository into Vercel and set the project Root Directory to `server`.
-2. The `server/api/index.js` function initializes the Express app and reuses the Mongoose connection between warm invocations. `server/vercel.json` rewrites `/api/*` requests to the function.
-3. Configure these Vercel environment variables:
+---
 
-```text
-NODE_ENV=production
-MONGODB_URI=<Atlas connection string>
-JWT_SECRET=<random secret with at least 32 characters>
-JWT_EXPIRES_IN=7d
-CLIENT_ORIGIN=https://<your-netlify-site>.netlify.app
-COOKIE_SECURE=true
-AUTH_COOKIE_NAME=taskora_token
-SYSTEM_ADMIN_EMAIL=<email for the first system admin>
-SYSTEM_ADMIN_BOOTSTRAP_TOKEN=<long random one-time token>
-```
+## 2. Deploy Backend API to Vercel
 
-4. Deploy and verify `https://<your-vercel-host>/api/health` returns a healthy API response.
-5. After deployment, configure the frontend origin exactly (scheme and hostname) in `CLIENT_ORIGIN`. Credentialed CORS requires an exact origin.
+1. Log in to [Vercel](https://vercel.com) and click **"Add New Project"**.
+2. Import the `CodeAlpha_ProjectManagementTool` repository.
+3. In the project setup screen:
+   - **Framework Preset**: Other
+   - **Root Directory**: Click "Edit" and select `server`
+4. Expand **Environment Variables** and add the following:
 
-## Netlify Frontend
+| Variable | Value | Notes |
+|---|---|---|
+| `NODE_ENV` | `production` | Enables production security & optimizations |
+| `MONGODB_URI` | `mongodb+srv://...` | Your MongoDB Atlas connection string |
+| `JWT_SECRET` | `tsk_9f3c1a2e7b8d4056af1e9c3b7d20648e5a1c9f3e2b6d40571` | At least 32 characters |
+| `JWT_EXPIRES_IN` | `7d` | Token expiry duration |
+| `CLIENT_ORIGIN` | `https://your-app.netlify.app` | Exact HTTPS URL of your frontend (supports multiple comma-separated URLs) |
+| `COOKIE_SECURE` | `true` | Required for HTTPS cross-site cookies |
+| `AUTH_COOKIE_NAME` | `taskora_token` | Auth cookie identifier |
+| `SYSTEM_ADMIN_EMAIL` | `admin@gmail.com` | Email address of the primary platform admin |
+| `EMAIL_HOST` | `smtp.gmail.com` | SMTP host for password reset emails |
+| `EMAIL_PORT` | `587` | SMTP port |
+| `EMAIL_USER` | `your-email@gmail.com` | Gmail/SMTP username |
+| `EMAIL_PASS` | `your-app-password` | Gmail App Password (16 characters) |
+| `EMAIL_FROM` | `Taskora <your-email@gmail.com>` | Sender address |
 
-1. Import the same repository into Netlify and set the Base directory to `client`.
-2. Set the build command to `npm run build` and publish directory to `dist`.
-3. Set `VITE_API_URL=https://<your-vercel-host>/api` in the Netlify environment variables, then redeploy. Vite variables are embedded at build time.
-4. The `client/public/_redirects` SPA fallback serves the application for nested routes.
+5. Click **Deploy**.
+6. When deployment finishes, copy your Vercel URL (e.g. `https://taskora-api.vercel.app`).
+7. Test the health endpoint in your browser:
+   `https://taskora-api.vercel.app/api/health` → should return `{"success": true, "data": {"status": "ok", ...}}`.
 
-## Cross-origin authentication
+---
 
-The frontend and API run on different hosts. Production auth cookies therefore require HTTPS, `SameSite=None`, and `Secure`; the API enables credentialed CORS for the exact `CLIENT_ORIGIN`, and the client sends requests with credentials. Do not use a wildcard CORS origin. Browser third-party-cookie restrictions can vary, so verify registration, login, refresh, logout, and protected-page reloads in the target browser after deployment. If the chosen hosts block cross-site cookies, use same-site custom domains or a same-origin proxy before production use.
+## 3. Deploy Frontend (Option A: Netlify)
 
-## First system administrator
+1. Log in to [Netlify](https://netlify.com) and click **"Add new site"** -> **"Import an existing project"**.
+2. Select your GitHub repository.
+3. In the build settings:
+   - **Base directory**: `client`
+   - **Build command**: `npm run build`
+   - **Publish directory**: `dist` (or `client/dist`)
+4. Expand **Environment variables** and add:
 
-1. Configure `SYSTEM_ADMIN_EMAIL` and a one-time `SYSTEM_ADMIN_BOOTSTRAP_TOKEN` in Vercel before deploying.
-2. Register and sign in using the configured email.
-3. Visit `/admin/setup` on the Netlify site and submit the one-time token.
-4. Confirm the admin console at `/admin` works, then remove `SYSTEM_ADMIN_BOOTSTRAP_TOKEN` from Vercel and redeploy. Public registration cannot grant system-admin privileges.
+| Variable | Value | Notes |
+|---|---|---|
+| `VITE_API_URL` | `https://your-api.vercel.app/api` | Your backend API URL (code auto-normalizes missing `/api` or trailing slashes) |
 
-Keep all secrets in hosting-provider environment settings. Never paste passwords, JWT secrets, MongoDB credentials, or the bootstrap token into source control or chat. The `.env.example` files are examples only and contain no working credentials.
+5. Click **Deploy Taskora**.
+6. Once deployed, copy your Netlify URL (e.g. `https://taskora.netlify.app`).
+7. **Crucial Step**: Go back to your Vercel backend project settings -> **Environment Variables** -> update `CLIENT_ORIGIN` to match your exact Netlify domain:
+   `CLIENT_ORIGIN=https://taskora.netlify.app`
+8. Redeploy the backend (or Promote latest deployment) so the new `CLIENT_ORIGIN` takes effect.
+
+---
+
+## 4. Deploy Frontend (Option B: Vercel)
+
+If you prefer deploying the frontend to Vercel instead of Netlify:
+
+1. In Vercel, click **"Add New Project"** and import the same repository again.
+2. In the project setup:
+   - **Root Directory**: `client`
+   - **Framework Preset**: Vite
+3. In **Environment Variables**, add:
+   - `VITE_API_URL`: `https://your-api.vercel.app/api`
+4. Click **Deploy**.
+5. Client-side routing is automatically handled by `client/vercel.json` (`/*` rewrites to `/index.html`).
+6. Update `CLIENT_ORIGIN` on your backend project to your Vercel frontend domain:
+   `CLIENT_ORIGIN=https://taskora-client.vercel.app`
+
+---
+
+## 5. Pre-Flight Verification Checklist
+
+Before sharing your live link:
+
+- [ ] **Health Check**: Open `https://your-api.vercel.app/api/health` — returns status `ok`.
+- [ ] **Registration**: Register a new user on your frontend. Verify you are automatically logged in and redirected to `/`.
+- [ ] **Page Refresh**: Refresh the browser while on `/projects` or `/tasks` — page reloads without a 404 error (handled by `_redirects` / `vercel.json`).
+- [ ] **Task Creation & Board**: Create a project and add a task. Confirm drag/drop or status changes persist.
+- [ ] **Reports & Analytics**: Visit `/analytics` and test **"Download PDF Report"** and **"Export CSV"**.
+- [ ] **Logout & Login**: Log out and log back in to verify session cookies transmit securely across origins.
