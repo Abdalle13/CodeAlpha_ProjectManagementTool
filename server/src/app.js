@@ -40,6 +40,14 @@ export function createApp() {
         if (allowed.length === 0 || allowed.includes(cleanOrigin) || !isProduction()) {
           return callback(null, true);
         }
+        try {
+          const parsed = new URL(cleanOrigin);
+          if (parsed.hostname.endsWith(".vercel.app") || parsed.hostname.endsWith(".netlify.app") || parsed.hostname === "localhost") {
+            return callback(null, true);
+          }
+        } catch {
+          // ignore
+        }
         return callback(new Error("Origin not allowed by CORS"));
       },
       credentials: true,
