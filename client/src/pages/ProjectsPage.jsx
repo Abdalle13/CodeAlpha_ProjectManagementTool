@@ -85,40 +85,6 @@ export default function ProjectsPage() {
 
   return (
     <section className="fade-in" style={{ position: "relative" }}>
-      {/* Toast Notification (Top Right / Center Floating, auto-dismiss in 3.5s) */}
-      {notice && (
-        <div
-          style={{
-            position: "fixed",
-            top: "1.25rem",
-            right: "1.5rem",
-            zIndex: 100,
-            background: "var(--surface)",
-            color: "var(--ink)",
-            border: "1px solid var(--border)",
-            borderLeft: "4px solid #10b981",
-            padding: "0.85rem 1.25rem",
-            borderRadius: "10px",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-            animation: "fade-in 200ms ease",
-            fontSize: "0.875rem",
-            fontWeight: 500,
-          }}
-        >
-          <span style={{ color: "#10b981", fontWeight: 700, fontSize: "1.1rem" }}>✓</span>
-          <span>{notice}</span>
-          <button
-            type="button"
-            onClick={() => setNotice("")}
-            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "1rem", marginLeft: "0.5rem" }}
-          >
-            ×
-          </button>
-        </div>
-      )}
 
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
