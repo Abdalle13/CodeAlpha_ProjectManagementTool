@@ -486,12 +486,12 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Filter and Download Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", flex: "1 1 20rem" }}>
           {/* Project Filter */}
           <select
             id="analytics-proj-select"
             className="input"
-            style={{ width: "auto", minWidth: "13rem", height: "2.25rem", fontSize: "0.825rem" }}
+            style={{ flex: "1 1 14rem", minWidth: 0, height: "2.35rem", fontSize: "0.825rem" }}
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
           >
@@ -508,7 +508,7 @@ export default function AnalyticsPage() {
             type="button"
             onClick={handleExportCSV}
             className="btn btn-secondary"
-            style={{ gap: "0.45rem", fontSize: "0.825rem" }}
+            style={{ gap: "0.45rem", fontSize: "0.825rem", height: "2.35rem", flex: "1 1 auto", whiteSpace: "nowrap" }}
             title="Download CSV raw data"
           >
             <IcoFileText />
@@ -520,7 +520,7 @@ export default function AnalyticsPage() {
             type="button"
             onClick={handleDownloadPDF}
             className="btn btn-primary"
-            style={{ gap: "0.45rem", fontSize: "0.825rem" }}
+            style={{ gap: "0.45rem", fontSize: "0.825rem", height: "2.35rem", flex: "1 1 auto", whiteSpace: "nowrap" }}
             title="Download full printable PDF report"
           >
             <IcoDownload />

@@ -372,7 +372,7 @@ export default function DashboardPage() {
           boxShadow: "var(--shadow-sm)",
         }}
       >
-        <div>
+        <div style={{ flex: "1 1 18rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
             <h1 style={{ margin: 0, fontSize: "1.45rem", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--ink)" }}>
               {greeting}, {firstName}
@@ -383,10 +383,10 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", flex: "1 1 auto" }}>
           <div
             style={{
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
               gap: "0.45rem",
               background: "var(--surface2)",
@@ -396,6 +396,7 @@ export default function DashboardPage() {
               fontWeight: 600,
               color: "var(--ink2)",
               border: "1px solid var(--border)",
+              whiteSpace: "nowrap",
             }}
           >
             <IcoCalendar />
@@ -405,7 +406,7 @@ export default function DashboardPage() {
           <Link
             to="/tasks"
             className="btn btn-secondary"
-            style={{ gap: "0.45rem", fontSize: "0.825rem", fontWeight: 600 }}
+            style={{ gap: "0.45rem", fontSize: "0.825rem", fontWeight: 600, flex: "1 1 auto", whiteSpace: "nowrap", justifyContent: "center" }}
           >
             <IcoBoard />
             Task Board
@@ -414,7 +415,7 @@ export default function DashboardPage() {
           <Link
             to="/projects"
             className="btn btn-primary"
-            style={{ gap: "0.45rem", fontSize: "0.825rem", fontWeight: 600 }}
+            style={{ gap: "0.45rem", fontSize: "0.825rem", fontWeight: 600, flex: "1 1 auto", whiteSpace: "nowrap", justifyContent: "center" }}
           >
             <IcoPlus />
             Browse Projects
@@ -466,7 +467,7 @@ export default function DashboardPage() {
         style={{
           display: "grid",
           gap: "1rem",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 14rem), 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 11rem), 1fr))",
           marginBottom: "1.5rem",
         }}
       >

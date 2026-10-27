@@ -84,30 +84,32 @@ export default function TeamPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="card" style={{ padding: "0.875rem 1.25rem", display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center", marginBottom: "1.5rem" }}>
-        <input
-          className="input"
-          style={{ maxWidth: "18rem", flex: "1 1 12rem" }}
-          placeholder="Search member by name or email…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-
-        {projects.length > 0 && (
-          <select
+      <div className="card" style={{ padding: "0.875rem 1rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", flex: "1 1 20rem" }}>
+          <input
             className="input"
-            style={{ width: "auto" }}
-            value={projectFilter}
-            onChange={e => setProjectFilter(e.target.value)}
-          >
-            <option value="">All Projects</option>
-            {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        )}
+            style={{ flex: "1 1 14rem", minWidth: 0 }}
+            placeholder="Search member by name or email…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
 
-        <span style={{ marginLeft: "auto", fontSize: "0.8125rem", color: "var(--muted)" }}>
+          {projects.length > 0 && (
+            <select
+              className="input"
+              style={{ flex: "0 1 auto", minWidth: "9.5rem" }}
+              value={projectFilter}
+              onChange={e => setProjectFilter(e.target.value)}
+            >
+              <option value="">All Projects</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        <span style={{ fontSize: "0.8125rem", color: "var(--muted)", fontWeight: 600, marginLeft: "auto" }}>
           {filtered.length} member{filtered.length !== 1 ? "s" : ""}
         </span>
       </div>

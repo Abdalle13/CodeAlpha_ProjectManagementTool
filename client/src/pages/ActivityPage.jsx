@@ -165,70 +165,64 @@ export default function ActivityPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="card" style={{ padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", gap: "0.875rem", flexWrap: "wrap", alignItems: "center" }}>
-        <input
-          className="input"
-          style={{ maxWidth: "16rem", flex: "1 1 12rem" }}
-          placeholder="Search by user, task, or text…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-
-        {/* Filter by Project */}
-        {projects.length > 0 && (
-          <select
+      <div className="card" style={{ padding: "0.875rem 1rem", marginBottom: "1.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", flex: "1 1 20rem" }}>
+          <input
             className="input"
-            style={{ width: "auto" }}
-            value={projectFilter}
-            onChange={e => setProjectFilter(e.target.value)}
-          >
-            <option value="">All Projects</option>
-            {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        )}
+            style={{ flex: "1 1 13rem", minWidth: 0 }}
+            placeholder="Search by user, task, or text…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
 
-        {/* Filter by Member */}
-        {members.length > 0 && (
-          <select
-            className="input"
-            style={{ width: "auto" }}
-            value={memberFilter}
-            onChange={e => setMemberFilter(e.target.value)}
-          >
-            <option value="">All Team Members</option>
-            {members.map(m => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
-        )}
-
-        {/* Action Pills */}
-        <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
-          {["all", "completed", "created", "updated", "commented", "assigned"].map(f => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              style={{
-                padding: "0.3rem 0.75rem",
-                borderRadius: "99px",
-                border: "1px solid var(--border)",
-                fontSize: "0.775rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                background: filter === f ? "var(--accent)" : "var(--surface)",
-                color: filter === f ? "#fff" : "var(--muted)",
-                transition: "all 120ms ease",
-              }}
+          {/* Filter by Project */}
+          {projects.length > 0 && (
+            <select
+              className="input"
+              style={{ flex: "0 1 auto", minWidth: "9.5rem" }}
+              value={projectFilter}
+              onChange={e => setProjectFilter(e.target.value)}
             >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
+              <option value="">All Projects</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Filter by Member */}
+          {members.length > 0 && (
+            <select
+              className="input"
+              style={{ flex: "0 1 auto", minWidth: "10rem" }}
+              value={memberFilter}
+              onChange={e => setMemberFilter(e.target.value)}
+            >
+              <option value="">All Team Members</option>
+              {members.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Filter by Action Type Dropdown */}
+          <select
+            className="input"
+            style={{ flex: "0 1 auto", minWidth: "9.5rem" }}
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            aria-label="Filter by action"
+          >
+            <option value="all">All Actions</option>
+            <option value="completed">Completed Tasks</option>
+            <option value="created">Created Items</option>
+            <option value="updated">Updated Tasks</option>
+            <option value="commented">Comments</option>
+            <option value="assigned">Task Assignments</option>
+          </select>
         </div>
 
-        <span style={{ marginLeft: "auto", fontSize: "0.8rem", color: "var(--muted)" }}>
+        <span style={{ fontSize: "0.8125rem", color: "var(--muted)", fontWeight: 600, marginLeft: "auto" }}>
           {filtered.length} event{filtered.length !== 1 ? "s" : ""}
         </span>
       </div>

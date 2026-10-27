@@ -413,9 +413,6 @@ export default function ProjectDetailPage() {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
         <div style={{ flex: "1 1 20rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexWrap: "wrap", marginBottom: "0.4rem" }}>
-            <span style={{ fontWeight: 800, fontSize: "0.8rem", color: "var(--accent)", background: "var(--accent-soft)", padding: "2px 8px", borderRadius: "6px" }}>
-              {project.key || "PRJ"}
-            </span>
             <h1 className="page-title" style={{ margin: 0 }}>{project.name}</h1>
             <span className={"badge " + projectStatusBadge(project.status)}>
               {statusLabel(project.status)}
@@ -432,7 +429,7 @@ export default function ProjectDetailPage() {
           <button
             type="button"
             className="btn btn-primary"
-            style={{ gap: "0.4rem" }}
+            style={{ gap: "0.4rem", flex: "1 1 auto" }}
             onClick={() => { setEditTaskTarget(null); setTaskModalOpen(true); }}
           >
             + Add task
@@ -442,6 +439,7 @@ export default function ProjectDetailPage() {
             <button
               type="button"
               className="btn btn-secondary"
+              style={{ flex: "1 1 auto" }}
               onClick={() => setEditing(v => !v)}
             >
               {editing ? "Close editor" : "Edit project"}
@@ -452,6 +450,7 @@ export default function ProjectDetailPage() {
             <button
               type="button"
               className="btn btn-danger btn-sm"
+              style={{ flex: "0 0 auto" }}
               onClick={() => setConfirmDel(true)}
             >
               Delete
@@ -529,7 +528,7 @@ export default function ProjectDetailPage() {
       )}
 
       {/* Navigation Tabs */}
-      <div style={{ display: "flex", borderBottom: "1px solid var(--border)", marginBottom: "1.5rem", gap: "0.5rem" }}>
+      <div style={{ display: "flex", borderBottom: "1px solid var(--border)", marginBottom: "1.5rem", gap: "0.5rem", overflowX: "auto", scrollbarWidth: "none" }}>
         <button
           type="button"
           onClick={() => setTab("tasks")}
@@ -545,6 +544,7 @@ export default function ProjectDetailPage() {
             display: "flex",
             alignItems: "center",
             gap: "0.45rem",
+            whiteSpace: "nowrap",
             transition: "all 120ms ease",
           }}
         >
@@ -569,6 +569,7 @@ export default function ProjectDetailPage() {
             display: "flex",
             alignItems: "center",
             gap: "0.45rem",
+            whiteSpace: "nowrap",
             transition: "all 120ms ease",
           }}
         >
@@ -593,6 +594,7 @@ export default function ProjectDetailPage() {
             display: "flex",
             alignItems: "center",
             gap: "0.45rem",
+            whiteSpace: "nowrap",
             transition: "all 120ms ease",
           }}
         >
@@ -607,18 +609,18 @@ export default function ProjectDetailPage() {
       {tab === "tasks" && (
         <div className="fade-in">
           {/* Task Filters & View Toggle */}
-          <div className="card" style={{ padding: "0.875rem 1rem", display: "flex", gap: "0.875rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", flex: "1 1 18rem" }}>
+          <div className="card" style={{ padding: "0.875rem 1rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", flex: "1 1 20rem" }}>
               <input
                 className="input"
-                style={{ maxWidth: "16rem", flex: "1 1 12rem" }}
+                style={{ flex: "1 1 12rem", minWidth: 0 }}
                 placeholder="Search tasks by title or code…"
                 value={taskSearch}
                 onChange={e => setTaskSearch(e.target.value)}
               />
 
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <label className="label" htmlFor="p-filter-status" style={{ margin: 0 }}>Status:</label>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: "0 1 auto" }}>
+                <label className="label" htmlFor="p-filter-status" style={{ margin: 0, whiteSpace: "nowrap" }}>Status:</label>
                 <select
                   id="p-filter-status"
                   className="input"
@@ -633,7 +635,7 @@ export default function ProjectDetailPage() {
             </div>
 
             {/* Board / Table Switcher */}
-            <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: "6px", overflow: "hidden" }}>
+            <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: "6px", overflow: "hidden", marginLeft: "auto" }}>
               <button
                 type="button"
                 onClick={() => setViewMode("board")}
@@ -1214,8 +1216,8 @@ export default function ProjectDetailPage() {
               <h3 style={{ margin: "0 0 0.875rem", fontSize: "0.95rem", fontWeight: 700, color: "var(--ink)" }}>
                 Add Team Member to Project
               </h3>
-              <form onSubmit={handleAddMember} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "0.75rem", alignItems: "flex-end" }}>
-                <div>
+              <form onSubmit={handleAddMember} style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "flex-end" }}>
+                <div style={{ flex: "1 1 14rem", minWidth: 0 }}>
                   <label className="label" htmlFor="member-email" style={{ marginBottom: "0.35rem" }}>Member Email</label>
                   <input
                     id="member-email"
@@ -1227,12 +1229,12 @@ export default function ProjectDetailPage() {
                     required
                   />
                 </div>
-                <div>
+                <div style={{ flex: "0 1 10rem" }}>
                   <label className="label" htmlFor="member-role" style={{ marginBottom: "0.35rem" }}>Project Role</label>
                   <select
                     id="member-role"
                     className="input"
-                    style={{ width: "8.5rem" }}
+                    style={{ width: "100%" }}
                     value={memberRole}
                     onChange={e => setMRole(e.target.value)}
                   >
@@ -1240,7 +1242,12 @@ export default function ProjectDetailPage() {
                     <option value="admin">Manager</option>
                   </select>
                 </div>
-                <button type="submit" className="btn btn-primary" disabled={pending}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ height: "2.35rem", padding: "0 1.15rem", whiteSpace: "nowrap" }}
+                  disabled={pending}
+                >
                   + Add member
                 </button>
               </form>

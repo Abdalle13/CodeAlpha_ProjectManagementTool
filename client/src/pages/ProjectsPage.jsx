@@ -188,9 +188,6 @@ export default function ProjectsPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.35rem" }}>
-                      <span style={{ fontWeight: 800, fontSize: "0.725rem", color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 7px", borderRadius: "5px" }}>
-                        {proj.key || "PRJ"}
-                      </span>
                       <span className={"badge " + projectStatusBadge(proj.status)}>{projectStatusLabel(proj.status)}</span>
                     </div>
                     <Link to={"/projects/" + proj.id} style={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--ink)", textDecoration: "none" }}>

@@ -198,28 +198,39 @@ export default function AdminDashboardPage() {
 
       {/* Header */}
       <div style={{
-        borderRadius: '14px',
-        padding: '1.5rem 1.75rem',
+        borderRadius: '16px',
+        padding: '1.25rem 1.5rem',
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         boxShadow: 'var(--shadow-sm)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: '1rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '1rem',
       }}>
-        <div>
+        <div style={{ flex: '1 1 15rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <IcoShield /> Admin Panel
           </div>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1.25 }}>
+          <h1 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1.25 }}>
             {greeting}, {user?.name?.split(" ")[0]}
           </h1>
-          <p style={{ margin: '0.3rem 0 0', fontSize: '0.875rem', color: 'var(--muted)' }}>
+          <p style={{ margin: '0.3rem 0 0', fontSize: '0.84rem', color: 'var(--muted)' }}>
             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
           </p>
         </div>
-        <button type="button" onClick={load} className="btn btn-secondary btn-sm" style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
-          <IcoRefresh /> Refresh
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
+          <button
+            type="button"
+            onClick={load}
+            className="btn btn-secondary btn-sm"
+            style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", height: "2.25rem", padding: "0 0.85rem", fontSize: "0.825rem", fontWeight: 600, whiteSpace: "nowrap" }}
+          >
+            <IcoRefresh />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
