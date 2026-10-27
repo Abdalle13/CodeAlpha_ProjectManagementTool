@@ -7,6 +7,7 @@ function mapUser(value) {
 }
 
 export function publicProject(project, currentUserId, systemRole = "member") {
+  const isOwner = String(project.owner?._id || project.owner?.id || project.owner || "") === String(currentUserId);
   const members = (project.members || []).map((member) => ({
     user: mapUser(member.user),
     role: member.role || "contributor",
@@ -15,7 +16,12 @@ export function publicProject(project, currentUserId, systemRole = "member") {
 
   const myRole = systemRole === "admin"
     ? "admin"
+    : isOwner
+    ? "owner"
     : members.find((member) => member.user?.id === String(currentUserId))?.role || null;
+
+  const canEdit = Boolean(systemRole === "admin" || isOwner || myRole === "admin");
+  const canDelete = Boolean(systemRole === "admin" || isOwner);
 
   return {
     id: String(project._id || project.id),
@@ -33,5 +39,7 @@ export function publicProject(project, currentUserId, systemRole = "member") {
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
     myRole,
+    canEdit,
+    canDelete,
   };
 }

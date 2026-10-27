@@ -82,7 +82,7 @@ export default function ActivityPage() {
     setError("");
     try {
       const [actRes, projRes, membRes] = await Promise.all([
-        listFeedActivity({ limit: 60 }),
+        listFeedActivity({ limit: 50 }),
         listProjects({ limit: 50 }).catch(() => ({ data: { items: [] } })),
         listTeamMembers().catch(() => ({ data: { items: [] } })),
       ]);

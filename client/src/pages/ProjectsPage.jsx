@@ -5,8 +5,11 @@ import { formatDate, projectStatusBadge, projectStatusLabel } from "../lib/proje
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import ProjectModal from "../components/ProjectModal.jsx";
 import Toast from "../components/Toast.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function ProjectsPage() {
+  const { user: currentUser } = useAuth();
+  const isGlobalAdmin = currentUser?.systemRole === "admin" || currentUser?.role === "admin";
   const [projects, setProjects]         = useState([]);
   const [loading, setLoading]           = useState(true);
   const [pending, setPending]           = useState(false);
@@ -211,33 +214,45 @@ export default function ProjectsPage() {
                   <span>{proj.dueDate ? "Due " + formatDate(proj.dueDate) : "No due date"}</span>
                 </div>
 
-                <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
-                  <Link
-                    to={"/projects/" + proj.id}
-                    className="btn btn-secondary btn-sm"
-                    style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem", fontWeight: 600 }}
-                  >
-                    View
-                  </Link>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
-                    onClick={() => { setEditTarget(proj); setModalError(""); setModalOpen(true); }}
-                    title="Edit project"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
-                    onClick={() => setDeleteTarget(proj)}
-                    title="Delete project"
-                  >
-                    Delete
-                  </button>
-                </div>
+                {(() => {
+                  const isOwner = String(proj.owner?.id || proj.owner?._id || "") === String(currentUser?.id);
+                  const canEdit = proj.canEdit ?? (isGlobalAdmin || isOwner || proj.myRole === "admin" || proj.myRole === "owner");
+                  const canDelete = proj.canDelete ?? (isGlobalAdmin || isOwner || proj.myRole === "owner");
+
+                  return (
+                    <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                      <Link
+                        to={"/projects/" + proj.id}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem", fontWeight: 600 }}
+                      >
+                        View
+                      </Link>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
+                          onClick={() => { setEditTarget(proj); setModalError(""); setModalOpen(true); }}
+                          title="Edit project"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
+                          onClick={() => setDeleteTarget(proj)}
+                          title="Delete project"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           ))}
@@ -264,49 +279,59 @@ export default function ProjectsPage() {
                 </tr>
               </thead>
               <tbody>
-                {projects.map(p => (
-                  <tr key={p.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "1rem 1.25rem" }}>
-                      <Link to={"/projects/" + p.id} style={{ fontWeight: 600, color: "var(--ink)", textDecoration: "none", fontSize: "0.925rem" }}>
-                        {p.name}
-                      </Link>
-                      {p.description && (
-                        <p style={{ margin: "0.2rem 0 0", fontSize: "0.775rem", color: "var(--muted)", maxWidth: "25rem", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                          {p.description}
-                        </p>
-                      )}
-                    </td>
-                    <td style={{ padding: "1rem" }}>
-                      <span className={"badge " + projectStatusBadge(p.status)}>{projectStatusLabel(p.status)}</span>
-                    </td>
-                    <td style={{ padding: "1rem", fontSize: "0.85rem", color: "var(--muted)" }}>
-                      {p.dueDate ? formatDate(p.dueDate) : "—"}
-                    </td>
-                    <td style={{ padding: "1rem 1.25rem", textAlign: "right" }}>
-                      <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end", alignItems: "center" }}>
-                        <Link to={"/projects/" + p.id} className="btn btn-secondary btn-sm" style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}>
-                          View
+                {projects.map(p => {
+                  const isOwner = String(p.owner?.id || p.owner?._id || "") === String(currentUser?.id);
+                  const canEdit = p.canEdit ?? (isGlobalAdmin || isOwner || p.myRole === "admin" || p.myRole === "owner");
+                  const canDelete = p.canDelete ?? (isGlobalAdmin || isOwner || p.myRole === "owner");
+
+                  return (
+                    <tr key={p.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "1rem 1.25rem" }}>
+                        <Link to={"/projects/" + p.id} style={{ fontWeight: 600, color: "var(--ink)", textDecoration: "none", fontSize: "0.925rem" }}>
+                          {p.name}
                         </Link>
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
-                          onClick={() => { setEditTarget(p); setModalError(""); setModalOpen(true); }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
-                          onClick={() => setDeleteTarget(p)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        {p.description && (
+                          <p style={{ margin: "0.2rem 0 0", fontSize: "0.775rem", color: "var(--muted)", maxWidth: "25rem", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                            {p.description}
+                          </p>
+                        )}
+                      </td>
+                      <td style={{ padding: "1rem" }}>
+                        <span className={"badge " + projectStatusBadge(p.status)}>{projectStatusLabel(p.status)}</span>
+                      </td>
+                      <td style={{ padding: "1rem", fontSize: "0.85rem", color: "var(--muted)" }}>
+                        {p.dueDate ? formatDate(p.dueDate) : "—"}
+                      </td>
+                      <td style={{ padding: "1rem 1.25rem", textAlign: "right" }}>
+                        <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end", alignItems: "center" }}>
+                          <Link to={"/projects/" + p.id} className="btn btn-secondary btn-sm" style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}>
+                            View
+                          </Link>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
+                              onClick={() => { setEditTarget(p); setModalError(""); setModalOpen(true); }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
+                              onClick={() => setDeleteTarget(p)}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
