@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import ProjectForm from "../components/ProjectForm.jsx";
 import TaskModal from "../components/TaskModal.jsx";
+import Toast from "../components/Toast.jsx";
 import {
   addProjectMember,
   createProjectTask,
@@ -52,8 +53,8 @@ export default function ProjectDetailPage() {
   const [tasks, setTasks]           = useState([]);
   const [activity, setActivity]     = useState([]);
   const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState("");
-  const [notice, setNotice]         = useState("");
+  const [toast, setToast]           = useState(null);
+  const [taskModalError, setTaskModalError] = useState("");
 
   const [tab, setTab]               = useState("tasks"); // 'tasks' is default!
   const [viewMode, setViewMode]     = useState("board"); // 'board' | 'table'
@@ -72,14 +73,10 @@ export default function ProjectDetailPage() {
   const [memberEmail, setMEmail] = useState("");
   const [memberRole, setMRole]   = useState("member");
 
-  function triggerNotice(msg) {
-    setNotice(msg);
-    if (msg) setTimeout(() => setNotice(""), 4000);
-  }
+  const showToast = (message, type = "success") => setToast({ message, type });
 
   async function load() {
     setLoading(true);
-    setError("");
     try {
       const [projRes, tasksRes, actRes] = await Promise.all([
         getProject(id),
@@ -90,7 +87,7 @@ export default function ProjectDetailPage() {
       setTasks(tasksRes.data.items || []);
       setActivity(actRes.data.items || []);
     } catch (e) {
-      setError(getErrorMessage(e, "Unable to load this project."));
+      showToast(getErrorMessage(e, "Unable to load this project."), "error");
       setProject(null);
     } finally {
       setLoading(false);
@@ -104,14 +101,13 @@ export default function ProjectDetailPage() {
   // Project update
   async function handleUpdate(values) {
     setPending(true);
-    setError("");
     try {
       const r = await updateProject(id, values);
       setProject(r.data.project);
       setEditing(false);
-      triggerNotice("Project details updated.");
+      showToast("Project details updated.", "success");
     } catch (e) {
-      setError(getErrorMessage(e, "Unable to update project."));
+      showToast(getErrorMessage(e, "Unable to update project."), "error");
     } finally {
       setPending(false);
     }
@@ -120,12 +116,11 @@ export default function ProjectDetailPage() {
   // Delete project
   async function handleDelete() {
     setPending(true);
-    setError("");
     try {
       await deleteProject(id);
       navigate("/projects", { replace: true });
     } catch (e) {
-      setError(getErrorMessage(e, "Unable to delete project."));
+      showToast(getErrorMessage(e, "Unable to delete project."), "error");
       setPending(false);
       setConfirmDel(false);
     }
@@ -136,15 +131,14 @@ export default function ProjectDetailPage() {
     e.preventDefault();
     if (!memberEmail.trim()) return;
     setPending(true);
-    setError("");
     try {
       const r = await addProjectMember(id, { email: memberEmail.trim(), role: memberRole });
       setProject(r.data.project);
       setMEmail("");
       setMRole("member");
-      triggerNotice("Team member added.");
+      showToast("Team member added.", "success");
     } catch (e) {
-      setError(getErrorMessage(e, "Unable to add member."));
+      showToast(getErrorMessage(e, "Unable to add member."), "error");
     } finally {
       setPending(false);
     }
@@ -153,13 +147,12 @@ export default function ProjectDetailPage() {
   // Change member role
   async function handleRoleChange(userId, role) {
     setPending(true);
-    setError("");
     try {
       const r = await updateProjectMember(id, userId, { role });
       setProject(r.data.project);
-      triggerNotice("Member role updated.");
+      showToast("Member role updated.", "success");
     } catch (e) {
-      setError(getErrorMessage(e, "Unable to update role."));
+      showToast(getErrorMessage(e, "Unable to update role."), "error");
     } finally {
       setPending(false);
     }
@@ -168,13 +161,12 @@ export default function ProjectDetailPage() {
   // Remove member
   async function handleRemoveMember(userId) {
     setPending(true);
-    setError("");
     try {
       const r = await removeProjectMember(id, userId);
       setProject(r.data.project);
-      triggerNotice("Member removed.");
+      showToast("Member removed.", "success");
     } catch (e) {
-      setError(getErrorMessage(e, "Unable to remove member."));
+      showToast(getErrorMessage(e, "Unable to remove member."), "error");
     } finally {
       setPending(false);
     }
@@ -183,20 +175,23 @@ export default function ProjectDetailPage() {
   // Task creation & editing
   async function handleTaskSubmit(payload) {
     setPending(true);
+    setTaskModalError("");
     try {
       if (editTaskTarget) {
         await updateProjectTask(id, editTaskTarget.id, payload);
-        triggerNotice("Task updated successfully.");
+        showToast("Task updated successfully.", "success");
       } else {
         await createProjectTask(id, { ...payload, projectId: id });
-        triggerNotice("Task created successfully.");
+        showToast("Task created successfully.", "success");
       }
       setTaskModalOpen(false);
       setEditTaskTarget(null);
       const res = await listProjectTasks(id);
       setTasks(res.data.items || []);
     } catch (e) {
-      setError(getErrorMessage(e, "Failed to save task."));
+      const msg = getErrorMessage(e, "Failed to save task.");
+      setTaskModalError(msg);
+      throw e;
     } finally {
       setPending(false);
     }
@@ -209,7 +204,7 @@ export default function ProjectDetailPage() {
       await updateProjectTask(id, task.id, { status: newStatus });
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
     } catch (e) {
-      setError(getErrorMessage(e, "Could not update task status."));
+      showToast(getErrorMessage(e, "Could not update task status."), "error");
     } finally {
       setPending(false);
     }
@@ -222,10 +217,10 @@ export default function ProjectDetailPage() {
     try {
       await deleteProjectTask(id, deleteTaskTarget.id);
       setTasks(prev => prev.filter(t => t.id !== deleteTaskTarget.id));
-      triggerNotice("Task deleted.");
+      showToast("Task deleted.", "success");
       setDeleteTaskTarget(null);
     } catch (e) {
-      setError(getErrorMessage(e, "Could not delete task."));
+      showToast(getErrorMessage(e, "Could not delete task."), "error");
     } finally {
       setPending(false);
     }
@@ -246,8 +241,28 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <section className="fade-in">
-        <p role="alert" style={{ color: "var(--red)" }}>{error || "Project not found."}</p>
-        <Link to="/projects" className="btn btn-secondary" style={{ marginTop: "1rem" }}>Back to projects</Link>
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "0.75rem",
+            padding: "1rem 1.25rem",
+            borderRadius: "10px",
+            background: "rgba(239, 68, 68, 0.1)",
+            color: "#ef4444",
+            border: "1px solid rgba(239, 68, 68, 0.25)",
+            marginBottom: "1.25rem",
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: "1px" }}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>Project not found or you don't have access to view it.</span>
+        </div>
+        <Link to="/projects" className="btn btn-secondary">Back to projects</Link>
       </section>
     );
   }
@@ -274,40 +289,6 @@ export default function ProjectDetailPage() {
 
   return (
     <section className="fade-in">
-      {/* Toast Notice */}
-      {notice && (
-        <div
-          style={{
-            position: "fixed",
-            top: "1.25rem",
-            right: "1.5rem",
-            zIndex: 100,
-            background: "var(--surface)",
-            color: "var(--ink)",
-            border: "1px solid var(--border)",
-            borderLeft: "4px solid #10b981",
-            padding: "0.85rem 1.25rem",
-            borderRadius: "10px",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-            animation: "fade-in 200ms ease",
-            fontSize: "0.875rem",
-            fontWeight: 500,
-          }}
-        >
-          <span style={{ color: "#10b981", fontWeight: 700, fontSize: "1.1rem" }}>✓</span>
-          <span>{notice}</span>
-          <button
-            type="button"
-            onClick={() => setNotice("")}
-            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "1rem", marginLeft: "0.5rem" }}
-          >
-            ×
-          </button>
-        </div>
-      )}
 
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" style={{ margin: "0 0 1rem", fontSize: "0.8125rem", color: "var(--muted)" }}>
@@ -367,7 +348,7 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {error && <p role="alert" style={{ marginBottom: "1rem", color: "var(--red)", fontSize: "0.85rem" }}>{error}</p>}
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
 
       {/* Project Completion Progress Bar */}
       <div className="card" style={{ padding: "1.125rem 1.25rem", marginBottom: "1.5rem" }}>
@@ -929,7 +910,8 @@ export default function ProjectDetailPage() {
         projects={[project]}
         members={projectMembersList}
         pending={pending}
-        onClose={() => setTaskModalOpen(false)}
+        error={taskModalError}
+        onClose={() => { setTaskModalOpen(false); setTaskModalError(""); }}
         onSubmit={handleTaskSubmit}
       />
 

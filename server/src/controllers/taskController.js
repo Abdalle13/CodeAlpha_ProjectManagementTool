@@ -242,7 +242,11 @@ export const updateTask = asyncHandler(async (req, res) => {
     req.user.role === "admin";
 
   if (req.body.assigneeId !== undefined && !isOwnerOrAdmin) {
-    throw new AppError("Only project owners and admins can change task assignments.", 403, "FORBIDDEN");
+    const currentAssigneeStr = task.assignee ? String(task.assignee) : "";
+    const requestedAssigneeStr = req.body.assigneeId ? String(req.body.assigneeId).trim() : "";
+    if (currentAssigneeStr !== requestedAssigneeStr) {
+      throw new AppError("Only project owners and admins can change task assignments.", 403, "FORBIDDEN");
+    }
   }
 
   if (req.body.title !== undefined) {

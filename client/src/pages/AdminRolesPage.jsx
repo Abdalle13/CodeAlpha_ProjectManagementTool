@@ -2,30 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getErrorMessage, listAdminUsers, updateAdminUser } from "../lib/api.js";
 import { formatDate } from "../lib/projects.js";
 import { useAuth } from "../context/AuthContext.jsx";
-
-function Toast({ message, type = "success", onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4000);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  const bg = type === "success" ? "var(--green)" : "var(--red)";
-  return (
-    <div style={{
-      position: "fixed", top: "1.25rem", right: "1.5rem", zIndex: 9999,
-      display: "flex", alignItems: "center", gap: "0.6rem",
-      background: bg, color: "#fff", borderRadius: "10px",
-      padding: "0.75rem 1.1rem", fontSize: "0.875rem", fontWeight: 600,
-      boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-      animation: "slide-up 200ms ease",
-      maxWidth: "26rem",
-    }}>
-      <span style={{ flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: "0 0.25rem", opacity: 0.75, fontSize: "1rem", lineHeight: 1 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-  );
-}
+import Toast from "../components/Toast.jsx";
 
 const ROLE_SECTIONS = [
   {

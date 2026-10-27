@@ -4,6 +4,7 @@ import { createProjectTask, createTaskComment, deleteProjectTask, getErrorMessag
 import { formatDate } from "../lib/projects.js";
 import TaskModal from "../components/TaskModal.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import Toast from "../components/Toast.jsx";
 
 const COLUMNS = [
   { value: "todo",        label: "To Do",       dot: "var(--muted2)" },
@@ -11,8 +12,6 @@ const COLUMNS = [
   { value: "in_review",   label: "In Review",    dot: "var(--yellow)" },
   { value: "completed",   label: "Completed",    dot: "var(--green)" },
 ];
-
-
 
 function IconEdit()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>; }
 function IconTrash() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>; }
@@ -25,8 +24,8 @@ export default function TasksPage() {
   const [tasks, setTasks]         = useState([]);
   const [loading, setLoading]     = useState(true);
   const [pending, setPending]     = useState(false);
-  const [error, setError]         = useState("");
-  const [notice, setNotice]       = useState("");
+  const [toast, setToast]         = useState(null);
+  const [modalError, setModalError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -36,9 +35,10 @@ export default function TasksPage() {
   const [comments, setComments]         = useState({});
   const [commentDraft, setCommentDraft] = useState({});
 
+  const showToast = (message, type = "success") => setToast({ message, type });
+
   async function load(f = filters) {
     setLoading(true);
-    setError("");
     try {
       const [pr, tk, tm] = await Promise.all([
         listProjects({ limit: 50 }),
@@ -49,7 +49,7 @@ export default function TasksPage() {
       setTasks(tk.data.items);
       setMembers(tm.data.items);
     } catch (e) {
-      setError(getErrorMessage(e, "Unable to load tasks."));
+      showToast(getErrorMessage(e, "Unable to load tasks."), "error");
     } finally {
       setLoading(false);
     }
@@ -65,21 +65,22 @@ export default function TasksPage() {
 
   async function handleModalSubmit(payload) {
     setPending(true);
-    setError("");
-    triggerNotice("");
+    setModalError("");
     try {
       if (editTarget) {
         await updateProjectTask(editTarget.project.id, editTarget.id, payload);
-        triggerNotice(`Task updated successfully.`);
+        showToast("Task updated successfully.", "success");
       } else {
         await createProjectTask(payload.projectId, payload);
-        triggerNotice(`Task created successfully.`);
+        showToast("Task created successfully.", "success");
       }
       setModalOpen(false);
       setEditTarget(null);
       await load();
     } catch (e) {
-      setError(getErrorMessage(e, "Failed to save task."));
+      const msg = getErrorMessage(e, "Failed to save task.");
+      setModalError(msg);
+      throw e;
     } finally {
       setPending(false);
     }
@@ -91,7 +92,7 @@ export default function TasksPage() {
       await updateProjectTask(task.project.id, task.id, { status: newStatus });
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
     } catch (e) {
-      setError(getErrorMessage(e, "Could not update status."));
+      showToast(getErrorMessage(e, "Could not update status."), "error");
     } finally {
       setPending(false);
     }
@@ -102,11 +103,11 @@ export default function TasksPage() {
     setPending(true);
     try {
       await deleteProjectTask(deleteTarget.project.id, deleteTarget.id);
-      triggerNotice("Task deleted.");
+      showToast("Task deleted.", "success");
       setDeleteTarget(null);
       await load();
     } catch (e) {
-      setError(getErrorMessage(e, "Could not delete task."));
+      showToast(getErrorMessage(e, "Could not delete task."), "error");
     } finally {
       setPending(false);
     }
@@ -123,7 +124,7 @@ export default function TasksPage() {
         const res = await listTaskComments(task.project.id, task.id);
         setComments(c => ({ ...c, [task.id]: res.data.items }));
       } catch (e) {
-        setError(getErrorMessage(e, "Unable to load comments."));
+        showToast(getErrorMessage(e, "Unable to load comments."), "error");
       }
     }
   }
@@ -137,7 +138,7 @@ export default function TasksPage() {
       setComments(c => ({ ...c, [task.id]: [...(c[task.id] || []), res.data.comment] }));
       setCommentDraft(d => ({ ...d, [task.id]: "" }));
     } catch (err) {
-      setError(getErrorMessage(err, "Unable to post comment."));
+      showToast(getErrorMessage(err, "Unable to post comment."), "error");
     }
   }
 
@@ -212,40 +213,7 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {notice && (
-        <div
-          style={{
-            position: "fixed",
-            top: "1.25rem",
-            right: "1.5rem",
-            zIndex: 100,
-            background: "var(--surface)",
-            color: "var(--ink)",
-            border: "1px solid var(--border)",
-            borderLeft: "4px solid #10b981",
-            padding: "0.85rem 1.25rem",
-            borderRadius: "10px",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-            animation: "fade-in 200ms ease",
-            fontSize: "0.875rem",
-            fontWeight: 500,
-          }}
-        >
-          <span style={{ color: "#10b981", fontWeight: 700, fontSize: "1.1rem" }}>✓</span>
-          <span>{notice}</span>
-          <button
-            type="button"
-            onClick={() => setNotice("")}
-            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "1rem", marginLeft: "0.5rem" }}
-          >
-            ×
-          </button>
-        </div>
-      )}
-      {error && <p role="alert" style={{ color: "var(--red)", fontSize: "0.8125rem" }}>{error}</p>}
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
 
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
@@ -491,7 +459,8 @@ export default function TasksPage() {
         projects={projects}
         members={members}
         pending={pending}
-        onClose={() => setModalOpen(false)}
+        error={modalError}
+        onClose={() => { setModalOpen(false); setModalError(""); }}
         onSubmit={handleModalSubmit}
       />
 

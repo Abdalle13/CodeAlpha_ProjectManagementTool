@@ -4,33 +4,25 @@ import { createProject, deleteProject, getErrorMessage, listProjects, updateProj
 import { formatDate, projectStatusBadge, projectStatusLabel } from "../lib/projects.js";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import ProjectModal from "../components/ProjectModal.jsx";
+import Toast from "../components/Toast.jsx";
 
 export default function ProjectsPage() {
   const [projects, setProjects]         = useState([]);
   const [loading, setLoading]           = useState(true);
   const [pending, setPending]           = useState(false);
-  const [error, setError]               = useState("");
+  const [toast, setToast]               = useState(null);
   const [modalError, setModalError]     = useState("");
-  const [notice, setNotice]             = useState("");
   const [query, setQuery]               = useState("");
   const [status, setStatus]             = useState("");
   const [viewMode, setViewMode]         = useState("grid"); // 'grid' | 'table'
   const [modalOpen, setModalOpen]       = useState(false);
   const [editTarget, setEditTarget]     = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const noticeTimerRef                  = useRef(null);
 
-  function triggerNotice(msg) {
-    setNotice(msg);
-    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
-    noticeTimerRef.current = setTimeout(() => {
-      setNotice("");
-    }, 3500);
-  }
+  const showToast = (message, type = "success") => setToast({ message, type });
 
   async function load(q = query, st = status) {
     setLoading(true);
-    setError("");
     try {
       const res = await listProjects({
         q: q || undefined,
@@ -39,7 +31,7 @@ export default function ProjectsPage() {
       });
       setProjects(res.data.items);
     } catch (e) {
-      setError(getErrorMessage(e, "Unable to load projects."));
+      showToast(getErrorMessage(e, "Unable to load projects."), "error");
     } finally {
       setLoading(false);
     }
@@ -47,9 +39,6 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     load();
-    return () => {
-      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
-    };
   }, []);
 
   function handleFilter(newQ, newSt) {
@@ -64,10 +53,10 @@ export default function ProjectsPage() {
     try {
       if (editTarget) {
         await updateProject(editTarget.id, payload);
-        triggerNotice(`Project "${payload.name}" updated successfully.`);
+        showToast(`Project "${payload.name}" updated successfully.`, "success");
       } else {
         await createProject(payload);
-        triggerNotice(`Project "${payload.name}" created successfully.`);
+        showToast(`Project "${payload.name}" created successfully.`, "success");
       }
       setModalOpen(false);
       setEditTarget(null);
@@ -82,14 +71,13 @@ export default function ProjectsPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setPending(true);
-    setError("");
     try {
       await deleteProject(deleteTarget.id);
-      triggerNotice(`Project "${deleteTarget.name}" deleted.`);
+      showToast(`Project "${deleteTarget.name}" deleted.`, "success");
       setDeleteTarget(null);
       await load();
     } catch (e) {
-      setError(getErrorMessage(e, "Unable to delete project."));
+      showToast(getErrorMessage(e, "Unable to delete project."), "error");
     } finally {
       setPending(false);
     }
@@ -207,7 +195,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {error && <p role="alert" style={{ marginBottom: "1rem", color: "var(--red)", fontSize: "0.85rem" }}>{error}</p>}
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
 
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(18rem, 1fr))", gap: "1rem" }}>

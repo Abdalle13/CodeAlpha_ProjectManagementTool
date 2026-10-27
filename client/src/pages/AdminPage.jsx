@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { deleteAdminProject, getErrorMessage, listAdminProjects, listAdminUsers, updateAdminUser } from "../lib/api.js";
 import { formatDate } from "../lib/projects.js";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import Toast from "../components/Toast.jsx";
 
 const ROLE_BADGE = { admin: "badge-purple", user: "badge-gray" };
 
@@ -64,8 +65,8 @@ export default function AdminPage() {
         <p style={{ marginTop: "0.35rem", color: "var(--muted)", fontSize: "0.875rem" }}>Manage accounts and projects across the platform.</p>
       </div>
 
-      {notice && <p role="status" style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--green)" }}>{notice}</p>}
-      {error  && <p role="alert"  style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--red)" }}>{error}</p>}
+      <Toast message={notice} type="success" onClose={() => setNotice("")} />
+      <Toast message={error} type="error" onClose={() => setError("")} />
 
       {/* Summary stats */}
       {!loading && (

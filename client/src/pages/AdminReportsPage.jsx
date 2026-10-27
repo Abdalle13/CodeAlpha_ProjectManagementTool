@@ -1,31 +1,9 @@
 import { useEffect, useState } from "react";
 import { getAdminStats, getErrorMessage } from "../lib/api.js";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, PieChart, Pie } from "recharts";
+import Toast from "../components/Toast.jsx";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#64748b"];
-
-function Toast({ message, type = "success", onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3500);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  return (
-    <div style={{
-      position: "fixed", top: "1.25rem", right: "1.5rem", zIndex: 9999,
-      display: "flex", alignItems: "center", gap: "0.6rem",
-      background: type === "success" ? "var(--green)" : "var(--red)",
-      color: "#fff", borderRadius: "10px",
-      padding: "0.75rem 1.1rem", fontSize: "0.875rem", fontWeight: 600,
-      boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-      animation: "slide-up 200ms ease", maxWidth: "28rem",
-    }}>
-      <span style={{ flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 0, opacity: 0.8 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-  );
-}
 
 function KpiCard({ label, value, sub, color }) {
   return (

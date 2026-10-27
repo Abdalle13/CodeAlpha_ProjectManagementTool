@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { listTeamMembers, getErrorMessage } from "../lib/api.js";
 import { Avatar } from "../layouts/AppLayout.jsx";
+import Toast from "../components/Toast.jsx";
 
 export default function TeamPage() {
   const [members, setMembers] = useState([]);
@@ -26,6 +27,7 @@ export default function TeamPage() {
 
   return (
     <section className="fade-in">
+      <Toast message={error} type="error" onClose={() => setError("")} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap", marginBottom: "1.75rem" }}>
         <div>
           <h1 className="page-title">Project Members</h1>
@@ -59,10 +61,6 @@ export default function TeamPage() {
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="skeleton" style={{ height: "10rem", borderRadius: "12px" }} />
           ))}
-        </div>
-      ) : error ? (
-        <div style={{ padding: "1.5rem", borderRadius: "12px", background: "var(--red-soft)", color: "var(--red)" }}>
-          {error}
         </div>
       ) : filtered.length === 0 ? (
         <div className="card" style={{ padding: "2.5rem", textAlign: "center", color: "var(--muted)" }}>

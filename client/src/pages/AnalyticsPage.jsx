@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getDashboard, getErrorMessage } from "../lib/api.js";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
+import Toast from "../components/Toast.jsx";
 
 const COLORS = ["#8b95ab", "#4f6ef7", "#d97c10", "#17a55e"];
 
@@ -9,13 +10,17 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
 
-  useEffect(() => {
-    let active = true;
+  function fetchData() {
+    setLoading(true);
+    setError("");
     getDashboard()
-      .then(res => { if (active) setData(res.data); })
-      .catch(err => { if (active) setError(getErrorMessage(err, "Failed to load analytics.")); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .then(res => setData(res.data))
+      .catch(err => setError(getErrorMessage(err, "Failed to load analytics.")))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
   if (loading) {
@@ -26,14 +31,6 @@ export default function AnalyticsPage() {
           <div className="skeleton" style={{ height: "18rem", borderRadius: "12px" }} />
         </div>
       </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ padding: "1.5rem", borderRadius: "12px", background: "var(--red-soft)", color: "var(--red)" }}>
-        {error}
-      </div>
     );
   }
 
@@ -53,6 +50,7 @@ export default function AnalyticsPage() {
 
   return (
     <section className="fade-in">
+      <Toast message={error} type="error" onClose={() => setError("")} />
       <div style={{ marginBottom: "1.75rem" }}>
         <h1 className="page-title">Analytics & Velocity</h1>
         <p style={{ marginTop: "0.35rem", color: "var(--muted)", fontSize: "0.875rem" }}>
