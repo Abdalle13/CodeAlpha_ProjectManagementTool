@@ -27,9 +27,10 @@ async function reloadTask(taskId) {
 
 function canManageTask(task, req) {
   const isGlobalAdmin = req.user.systemRole === "admin" || req.user.role === "admin";
-  const isProjectLead = ["owner", "admin", "lead"].includes(req.membership?.role);
-  const isCreator = task.createdBy?.equals(req.user._id);
-  const isAssignee = task.assignee?.equals(req.user._id);
+  const isProjectOwner = req.project?.owner && (req.project.owner._id?.equals(req.user._id) || req.project.owner.equals?.(req.user._id));
+  const isProjectLead = isProjectOwner || ["owner", "admin", "lead"].includes(req.membership?.role);
+  const isCreator = (task.createdBy?._id && task.createdBy._id.equals(req.user._id)) || (task.createdBy && task.createdBy.equals && task.createdBy.equals(req.user._id));
+  const isAssignee = (task.assignee?._id && task.assignee._id.equals(req.user._id)) || (task.assignee && task.assignee.equals && task.assignee.equals(req.user._id));
   return isGlobalAdmin || isProjectLead || isCreator || isAssignee;
 }
 
@@ -404,12 +405,16 @@ export const deleteTask = asyncHandler(async (req, res) => {
     throw new AppError("Task not found.", 404, "NOT_FOUND");
   }
 
+  const isProjectOwner = req.project?.owner && (req.project.owner._id?.equals(req.user._id) || req.project.owner.equals?.(req.user._id));
   const isOwnerOrAdmin =
+    isProjectOwner ||
     ["owner", "admin", "lead"].includes(req.membership?.role) ||
     req.user.systemRole === "admin" ||
     req.user.role === "admin";
 
-  if (!isOwnerOrAdmin && !task.createdBy?.equals(req.user._id)) {
+  const isCreator = (task.createdBy?._id && task.createdBy._id.equals(req.user._id)) || (task.createdBy && task.createdBy.equals && task.createdBy.equals(req.user._id));
+
+  if (!isOwnerOrAdmin && !isCreator) {
     throw new AppError("You do not have permission to delete this task.", 403, "FORBIDDEN");
   }
 

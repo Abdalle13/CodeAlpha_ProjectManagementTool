@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createTaskComment,
+  deleteTaskComment,
   listProjectActivity,
   listTaskComments,
 } from "../controllers/collaborationController.js";
@@ -12,5 +13,6 @@ router.use(requireAuth, loadAccessibleProject);
 router.get("/activity", listProjectActivity);
 router.get("/tasks/:taskId/comments", listTaskComments);
 router.post("/tasks/:taskId/comments", createTaskComment);
+router.delete("/tasks/:taskId/comments/:commentId", deleteTaskComment);
 
 export default router;

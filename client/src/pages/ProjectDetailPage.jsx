@@ -4,6 +4,7 @@ import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import ProjectForm from "../components/ProjectForm.jsx";
 import TaskModal from "../components/TaskModal.jsx";
 import Toast from "../components/Toast.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import {
   addProjectMember,
   createProjectTask,
@@ -48,6 +49,33 @@ function InfoTile({ label, value, sub, accent }) {
 export default function ProjectDetailPage() {
   const { id }      = useParams();
   const navigate    = useNavigate();
+  const { user: currentUser } = useAuth();
+
+  function canEditTask(task) {
+    if (!currentUser) return false;
+    if (currentUser.systemRole === "admin" || currentUser.role === "admin") return true;
+    const isOwner = project && (
+      String(project.owner?.id || project.owner?._id || project.owner || "") === String(currentUser.id) ||
+      project.myRole === "owner" ||
+      project.myRole === "admin"
+    );
+    if (isOwner) return true;
+    const isCreator = String(task.createdBy?.id || task.createdBy?._id || task.createdBy || "") === String(currentUser.id);
+    const isAssignee = String(task.assignee?.id || task.assignee?._id || task.assignee || "") === String(currentUser.id);
+    return isCreator || isAssignee;
+  }
+
+  function canDeleteTask(task) {
+    if (!currentUser) return false;
+    if (currentUser.systemRole === "admin" || currentUser.role === "admin") return true;
+    const isOwner = project && (
+      String(project.owner?.id || project.owner?._id || project.owner || "") === String(currentUser.id) ||
+      project.myRole === "owner"
+    );
+    if (isOwner) return true;
+    const isCreator = String(task.createdBy?.id || task.createdBy?._id || task.createdBy || "") === String(currentUser.id);
+    return isCreator;
+  }
 
   const [project, setProject]       = useState(null);
   const [tasks, setTasks]           = useState([]);
@@ -633,6 +661,7 @@ export default function ProjectDetailPage() {
                                 className="input"
                                 style={{ flex: 1, height: "1.875rem", fontSize: "0.75rem", padding: "0 0.5rem" }}
                                 value={task.status}
+                                disabled={pending || !canEditTask(task)}
                                 onChange={e => handleTaskStatusChange(task, e.target.value)}
                               >
                                 {COLUMNS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -644,22 +673,26 @@ export default function ProjectDetailPage() {
                                 {task.assignee?.name ? `👤 ${task.assignee.name.split(" ")[0]}` : "Unassigned"}
                               </span>
                               <div style={{ display: "flex", gap: "0.3rem" }}>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary btn-sm"
-                                  style={{ height: "1.75rem", padding: "0 0.55rem", fontSize: "0.75rem" }}
-                                  onClick={() => { setEditTaskTarget(task); setTaskModalOpen(true); }}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-ghost btn-sm"
-                                  style={{ height: "1.75rem", padding: "0 0.4rem", color: "var(--red)" }}
-                                  onClick={() => setDeleteTaskTarget(task)}
-                                >
-                                  ✕
-                                </button>
+                                {canEditTask(task) && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ height: "1.75rem", padding: "0 0.55rem", fontSize: "0.75rem" }}
+                                    onClick={() => { setEditTaskTarget(task); setTaskModalOpen(true); }}
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                                {canDeleteTask(task) && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ height: "1.75rem", padding: "0 0.4rem", color: "var(--red)" }}
+                                    onClick={() => setDeleteTaskTarget(task)}
+                                  >
+                                    ✕
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -684,7 +717,7 @@ export default function ProjectDetailPage() {
                         <th className="nowrap" style={{ width: "8rem" }}>Status</th>
                         <th className="nowrap" style={{ width: "9.5rem" }}>Assignee</th>
                         <th className="nowrap" style={{ width: "8.5rem" }}>Due Date</th>
-                        <th className="nowrap" style={{ width: "6rem", textAlign: "right" }}>Actions</th>
+                        <th className="nowrap" style={{ width: "6.5rem", textAlign: "right" }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -700,13 +733,27 @@ export default function ProjectDetailPage() {
                           <td className="nowrap">{t.assignee?.name || "Unassigned"}</td>
                           <td className="nowrap">{t.dueDate ? formatDate(t.dueDate) : "—"}</td>
                           <td className="nowrap" style={{ textAlign: "right" }}>
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => { setEditTaskTarget(t); setTaskModalOpen(true); }}
-                            >
-                              Edit
-                            </button>
+                            <div style={{ display: "flex", gap: "0.3rem", justifyContent: "flex-end" }}>
+                              {canEditTask(t) && (
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => { setEditTaskTarget(t); setTaskModalOpen(true); }}
+                                >
+                                  Edit
+                                </button>
+                              )}
+                              {canDeleteTask(t) && (
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-sm"
+                                  style={{ color: "var(--red)", padding: "0 0.35rem" }}
+                                  onClick={() => setDeleteTaskTarget(t)}
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -736,20 +783,32 @@ export default function ProjectDetailPage() {
                       <span style={{ color: "var(--ink2)", fontWeight: 500 }}>
                         👤 {t.assignee?.name || "Unassigned"}
                       </span>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                         {t.dueDate && (
                           <span style={{ color: "var(--muted)", fontSize: "0.725rem" }}>
                             {formatDate(t.dueDate)}
                           </span>
                         )}
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          style={{ height: "1.75rem", padding: "0 0.65rem", fontSize: "0.75rem" }}
-                          onClick={() => { setEditTaskTarget(t); setTaskModalOpen(true); }}
-                        >
-                          Edit
-                        </button>
+                        {canEditTask(t) && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ height: "1.75rem", padding: "0 0.65rem", fontSize: "0.75rem" }}
+                            onClick={() => { setEditTaskTarget(t); setTaskModalOpen(true); }}
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {canDeleteTask(t) && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            style={{ height: "1.75rem", padding: "0 0.4rem", color: "var(--red)" }}
+                            onClick={() => setDeleteTaskTarget(t)}
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

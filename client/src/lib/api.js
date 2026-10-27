@@ -131,6 +131,11 @@ export async function createTaskComment(projectId, taskId, payload) {
   return response.data;
 }
 
+export async function deleteTaskComment(projectId, taskId, commentId) {
+  const response = await api.delete(`/projects/${projectId}/tasks/${taskId}/comments/${commentId}`);
+  return response.data;
+}
+
 export async function getAdminStats() {
   const response = await api.get("/admin/stats");
   return response.data;

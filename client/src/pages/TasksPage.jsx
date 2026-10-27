@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-import { createProjectTask, createTaskComment, deleteProjectTask, getErrorMessage, listTaskComments, listTasks, listProjects, listTeamMembers, updateProjectTask } from "../lib/api.js";
+import { createProjectTask, createTaskComment, deleteTaskComment, deleteProjectTask, getErrorMessage, listTaskComments, listTasks, listProjects, listTeamMembers, updateProjectTask } from "../lib/api.js";
 import { formatDate } from "../lib/projects.js";
 import TaskModal from "../components/TaskModal.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
@@ -142,6 +142,40 @@ export default function TasksPage() {
     }
   }
 
+  function canEditTask(task) {
+    if (!user) return false;
+    if (user.systemRole === "admin" || user.role === "admin") return true;
+    const proj = projects.find(p => String(p.id || p._id) === String(task.project?.id || task.project));
+    const isOwner = proj && String(proj.owner?.id || proj.owner?._id || proj.owner || "") === String(user.id);
+    if (isOwner) return true;
+    const isCreator = String(task.createdBy?.id || task.createdBy?._id || task.createdBy || "") === String(user.id);
+    const isAssignee = String(task.assignee?.id || task.assignee?._id || task.assignee || "") === String(user.id);
+    return isCreator || isAssignee;
+  }
+
+  function canDeleteTask(task) {
+    if (!user) return false;
+    if (user.systemRole === "admin" || user.role === "admin") return true;
+    const proj = projects.find(p => String(p.id || p._id) === String(task.project?.id || task.project));
+    const isOwner = proj && String(proj.owner?.id || proj.owner?._id || proj.owner || "") === String(user.id);
+    if (isOwner) return true;
+    const isCreator = String(task.createdBy?.id || task.createdBy?._id || task.createdBy || "") === String(user.id);
+    return isCreator;
+  }
+
+  async function handleDeleteComment(task, commentId) {
+    try {
+      await deleteTaskComment(task.project.id, task.id, commentId);
+      setComments(c => ({
+        ...c,
+        [task.id]: (c[task.id] || []).filter(item => String(item.id) !== String(commentId))
+      }));
+      showToast("Comment deleted.", "success");
+    } catch (err) {
+      showToast(getErrorMessage(err, "Unable to delete comment."), "error");
+    }
+  }
+
   return (
     <section className="fade-in">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
@@ -271,21 +305,23 @@ export default function TasksPage() {
                             className="input"
                             style={{ fontSize: "0.775rem", height: "1.9rem", marginBottom: "0.5rem" }}
                             value={task.status === "done" ? "completed" : task.status}
-                            disabled={pending}
+                            disabled={pending || !canEditTask(task)}
                             onChange={e => handleStatusChange(task, e.target.value)}
                           >
                             {COLUMNS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                           </select>
 
                           <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => { setEditTarget(task); setModalOpen(true); }}
-                              title="Edit task"
-                            >
-                              <IconEdit /> Edit
-                            </button>
+                            {canEditTask(task) && (
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => { setEditTarget(task); setModalOpen(true); }}
+                                title="Edit task"
+                              >
+                                <IconEdit /> Edit
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="btn btn-secondary btn-sm"
@@ -294,15 +330,17 @@ export default function TasksPage() {
                             >
                               <IconMsg /> {hasComment ? "Hide" : "Comments"}
                             </button>
-                            <button
-                              type="button"
-                              className="btn btn-ghost btn-sm"
-                              style={{ color: "var(--red)", marginLeft: "auto" }}
-                              onClick={() => setDeleteTarget(task)}
-                              title="Delete task"
-                            >
-                              <IconTrash />
-                            </button>
+                            {canDeleteTask(task) && (
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                style={{ color: "var(--red)", marginLeft: "auto" }}
+                                onClick={() => setDeleteTarget(task)}
+                                title="Delete task"
+                              >
+                                <IconTrash />
+                              </button>
+                            )}
                           </div>
 
                           {/* Inline Comments */}
@@ -313,12 +351,33 @@ export default function TasksPage() {
                                 {(comments[task.id] || []).length === 0 ? (
                                   <p style={{ margin: 0, fontSize: "0.725rem", color: "var(--muted)" }}>No comments yet.</p>
                                 ) : (
-                                  comments[task.id].map(c => (
-                                    <div key={c.id} style={{ background: "var(--surface2)", padding: "0.4rem 0.5rem", borderRadius: "6px", fontSize: "0.75rem" }}>
-                                      <span style={{ fontWeight: 600 }}>{c.author?.name}: </span>
-                                      <span>{c.content || c.body}</span>
-                                    </div>
-                                  ))
+                                  comments[task.id].map(c => {
+                                    const isAuthor = String(c.author?.id || c.author?._id || "") === String(user?.id);
+                                    const isGlobalAdmin = user?.systemRole === "admin" || user?.role === "admin";
+                                    const proj = projects.find(p => String(p.id || p._id) === String(task.project?.id || task.project));
+                                    const isProjOwner = proj && String(proj.owner?.id || proj.owner?._id || proj.owner || "") === String(user?.id);
+                                    const canDeleteComment = isAuthor || isGlobalAdmin || isProjOwner;
+
+                                    return (
+                                      <div key={c.id} style={{ background: "var(--surface2)", padding: "0.4rem 0.6rem", borderRadius: "6px", fontSize: "0.75rem", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+                                        <div>
+                                          <span style={{ fontWeight: 600 }}>{c.author?.name}: </span>
+                                          <span>{c.content || c.body}</span>
+                                        </div>
+                                        {canDeleteComment && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteComment(task, c.id)}
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ padding: "0 0.35rem", height: "1.25rem", color: "var(--red)", fontSize: "0.75rem", lineHeight: 1 }}
+                                            title="Delete comment"
+                                          >
+                                            ✕
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })
                                 )}
                               </div>
                               <form onSubmit={e => handleAddComment(e, task)} style={{ display: "flex", gap: "0.35rem" }}>
@@ -382,13 +441,28 @@ export default function TasksPage() {
                         <td className="nowrap">{t.assignee?.name || "Unassigned"}</td>
                         <td className="nowrap">{t.dueDate ? formatDate(t.dueDate) : "—"}</td>
                         <td className="nowrap" style={{ textAlign: "right" }}>
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => { setEditTarget(t); setModalOpen(true); }}
-                          >
-                            Edit
-                          </button>
+                          <div style={{ display: "flex", gap: "0.35rem", justifyContent: "flex-end", alignItems: "center" }}>
+                            {canEditTask(t) && (
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => { setEditTarget(t); setModalOpen(true); }}
+                              >
+                                Edit
+                              </button>
+                            )}
+                            {canDeleteTask(t) && (
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                style={{ color: "var(--red)" }}
+                                onClick={() => setDeleteTarget(t)}
+                                title="Delete task"
+                              >
+                                <IconTrash />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -429,20 +503,32 @@ export default function TasksPage() {
                     <span style={{ color: "var(--ink2)", fontWeight: 500 }}>
                       👤 {t.assignee?.name || "Unassigned"}
                     </span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                       {t.dueDate && (
                         <span style={{ color: "var(--muted)", fontSize: "0.725rem" }}>
                           {formatDate(t.dueDate)}
                         </span>
                       )}
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        style={{ height: "1.75rem", padding: "0 0.65rem", fontSize: "0.75rem" }}
-                        onClick={() => { setEditTarget(t); setModalOpen(true); }}
-                      >
-                        Edit
-                      </button>
+                      {canEditTask(t) && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{ height: "1.75rem", padding: "0 0.65rem", fontSize: "0.75rem" }}
+                          onClick={() => { setEditTarget(t); setModalOpen(true); }}
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {canDeleteTask(t) && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          style={{ height: "1.75rem", padding: "0 0.4rem", color: "var(--red)" }}
+                          onClick={() => setDeleteTarget(t)}
+                        >
+                          <IconTrash />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

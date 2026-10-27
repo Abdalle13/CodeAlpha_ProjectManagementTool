@@ -70,6 +70,36 @@ export const createTaskComment = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: { comment: publicComment(populated) } });
 });
 
+export const deleteTaskComment = asyncHandler(async (req, res) => {
+  const task = await loadProjectTask(req.project._id, req.params.taskId);
+  if (!mongoose.isValidObjectId(req.params.commentId)) {
+    throw new AppError("Comment not found.", 404, "NOT_FOUND");
+  }
+  const comment = await Comment.findOne({
+    _id: req.params.commentId,
+    task: task._id,
+    project: req.project._id,
+  });
+  if (!comment) {
+    throw new AppError("Comment not found.", 404, "NOT_FOUND");
+  }
+
+  const isAuthor = comment.author?.equals(req.user._id);
+  const isGlobalAdmin = req.user.systemRole === "admin" || req.user.role === "admin";
+  const isProjectOwner = req.project.owner && (req.project.owner._id?.equals(req.user._id) || req.project.owner.equals?.(req.user._id));
+
+  if (!isAuthor && !isGlobalAdmin && !isProjectOwner) {
+    throw new AppError("You can only delete your own comments.", 403, "FORBIDDEN");
+  }
+
+  await comment.deleteOne();
+
+  res.json({
+    success: true,
+    data: { message: "Comment deleted successfully." },
+  });
+});
+
 export const listProjectActivity = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const filter = { project: req.project._id };
