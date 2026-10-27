@@ -21,7 +21,10 @@ export const env = {
     return readEnv("CLIENT_ORIGIN", "http://localhost:5173").trim().replace(/\/+$/, "");
   },
   get allowedOrigins() {
-    const raw = readEnv("CLIENT_ORIGIN", "http://localhost:5173");
+    const raw = readEnv("CLIENT_ORIGIN", "");
+    if (!raw) {
+      return isProduction() ? [] : ["http://localhost:5173"];
+    }
     return raw
       .split(",")
       .map((o) => o.trim().replace(/\/+$/, ""))
