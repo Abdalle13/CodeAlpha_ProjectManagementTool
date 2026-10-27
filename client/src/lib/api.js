@@ -18,6 +18,26 @@ const api = axios.create({
   timeout: 10000,
 });
 
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("taskora_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("taskora_token");
+    }
+    return Promise.reject(error);
+  },
+);
+
 export function getErrorMessage(error, fallback = "Something went wrong. Please try again.") {
   return error?.response?.data?.error?.message || fallback;
 }
@@ -29,17 +49,29 @@ export async function getHealth() {
 
 export async function registerAccount(payload) {
   const response = await api.post("/auth/register", payload);
+  if (response.data?.data?.token && typeof window !== "undefined") {
+    localStorage.setItem("taskora_token", response.data.data.token);
+  }
   return response.data;
 }
 
 export async function loginAccount(payload) {
   const response = await api.post("/auth/login", payload);
+  if (response.data?.data?.token && typeof window !== "undefined") {
+    localStorage.setItem("taskora_token", response.data.data.token);
+  }
   return response.data;
 }
 
 export async function logoutAccount() {
-  const response = await api.post("/auth/logout");
-  return response.data;
+  try {
+    const response = await api.post("/auth/logout");
+    return response.data;
+  } finally {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("taskora_token");
+    }
+  }
 }
 
 export async function forgotPasswordApi(payload) {

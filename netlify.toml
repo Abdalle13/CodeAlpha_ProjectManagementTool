@@ -4,6 +4,12 @@
   command = "npm run build"
 
 [[redirects]]
+  from = "/api/*"
+  to = "https://taskora-two-drab.vercel.app/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

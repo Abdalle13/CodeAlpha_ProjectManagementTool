@@ -47,7 +47,7 @@ export const register = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    data: { user: publicUser(user) },
+    data: { user: publicUser(user), token },
   });
 });
 
@@ -87,7 +87,7 @@ export const login = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    data: { user: publicUser(user) },
+    data: { user: publicUser(user), token },
   });
 });
 
