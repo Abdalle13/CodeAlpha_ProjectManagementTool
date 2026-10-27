@@ -4,7 +4,12 @@ function resolveApiBaseUrl() {
   const envUrl = typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL
     ? String(import.meta.env.VITE_API_URL).trim()
     : "";
-  if (!envUrl) return "/api";
+  if (!envUrl) {
+    if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      return "https://taskora-two-drab.vercel.app/api";
+    }
+    return "/api";
+  }
   const clean = envUrl.replace(/\/+$/, "");
   if (clean.startsWith("http://") || clean.startsWith("https://")) {
     return clean.endsWith("/api") ? clean : `${clean}/api`;
@@ -39,7 +44,7 @@ api.interceptors.response.use(
 );
 
 export function getErrorMessage(error, fallback = "Something went wrong. Please try again.") {
-  return error?.response?.data?.error?.message || fallback;
+  return error?.response?.data?.error?.message || error?.response?.data?.message || (error?.message ? `${fallback} (${error.message})` : fallback);
 }
 
 export async function getHealth() {
