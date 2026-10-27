@@ -126,7 +126,8 @@ export async function listTaskComments(projectId, taskId, params = {}) {
 }
 
 export async function createTaskComment(projectId, taskId, payload) {
-  const response = await api.post(`/projects/${projectId}/tasks/${taskId}/comments`, payload);
+  const data = typeof payload === "string" ? { body: payload } : (payload?.body ? payload : { body: payload?.content || "" });
+  const response = await api.post(`/projects/${projectId}/tasks/${taskId}/comments`, data);
   return response.data;
 }
 
@@ -187,6 +188,11 @@ export async function updateProfile(payload) {
 
 export async function listTeamMembers() {
   const response = await api.get("/users");
+  return response.data;
+}
+
+export async function listFeedActivity(params = {}) {
+  const response = await api.get("/activity", { params });
   return response.data;
 }
 

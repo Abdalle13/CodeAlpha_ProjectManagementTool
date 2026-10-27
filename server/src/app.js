@@ -12,6 +12,7 @@ import collaborationRouter from "./routes/collaboration.js";
 import dashboardRouter from "./routes/dashboard.js";
 import usersRouter from "./routes/users.js";
 import taskCollectionRouter from "./routes/taskCollection.js";
+import activityRouter from "./routes/activity.js";
 import { notFound } from "./middleware/notFound.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { originGuard } from "./middleware/originGuard.js";
@@ -58,6 +59,7 @@ export function createApp() {
   app.use("/api/admin", adminRouter);
   app.use("/api/dashboard", dashboardRouter);
   app.use("/api/users", usersRouter);
+  app.use("/api/activity", activityRouter);
 
   app.use(notFound);
   app.use(errorHandler);

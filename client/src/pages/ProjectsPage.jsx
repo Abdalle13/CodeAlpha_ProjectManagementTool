@@ -203,7 +203,7 @@ export default function ProjectsPage() {
                 )}
               </div>
 
-              <div style={{ marginTop: "1rem", borderTop: "1px solid var(--border)", paddingTop: "0.85rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ marginTop: "1rem", borderTop: "1px solid var(--border)", paddingTop: "0.85rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem", fontSize: "0.775rem", color: "var(--muted)" }}>
                   <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
                     👥 {proj.memberCount || proj.members?.length || 1} members
@@ -211,13 +211,33 @@ export default function ProjectsPage() {
                   <span>{proj.dueDate ? "Due " + formatDate(proj.dueDate) : "No due date"}</span>
                 </div>
 
-                <Link
-                  to={"/projects/" + proj.id}
-                  className="btn btn-secondary btn-sm"
-                  style={{ gap: "0.35rem", padding: "0.35rem 0.85rem", fontSize: "0.8rem", fontWeight: 600 }}
-                >
-                  View →
-                </Link>
+                <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                  <Link
+                    to={"/projects/" + proj.id}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem", fontWeight: 600 }}
+                  >
+                    View
+                  </Link>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
+                    onClick={() => { setEditTarget(proj); setModalError(""); setModalOpen(true); }}
+                    title="Edit project"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
+                    onClick={() => setDeleteTarget(proj)}
+                    title="Delete project"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -263,9 +283,27 @@ export default function ProjectsPage() {
                       {p.dueDate ? formatDate(p.dueDate) : "—"}
                     </td>
                     <td style={{ padding: "1rem 1.25rem", textAlign: "right" }}>
-                      <Link to={"/projects/" + p.id} className="btn btn-secondary btn-sm" style={{ padding: "0.35rem 0.85rem", fontSize: "0.8rem" }}>
-                        View
-                      </Link>
+                      <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end", alignItems: "center" }}>
+                        <Link to={"/projects/" + p.id} className="btn btn-secondary btn-sm" style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}>
+                          View
+                        </Link>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
+                          onClick={() => { setEditTarget(p); setModalError(""); setModalOpen(true); }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          style={{ padding: "0.3rem 0.65rem", fontSize: "0.78rem" }}
+                          onClick={() => setDeleteTarget(p)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

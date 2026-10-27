@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function IconX() {
   return (
@@ -9,6 +10,9 @@ function IconX() {
 }
 
 export default function TaskModal({ open, onClose, onSubmit, projects = [], members = [], pending, initial = null, error: parentError = "" }) {
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.systemRole === "admin" || currentUser?.role === "admin";
+
   const [projectId, setProjectId]     = useState("");
   const [title, setTitle]             = useState("");
   const [description, setDescription] = useState("");
@@ -16,6 +20,39 @@ export default function TaskModal({ open, onClose, onSubmit, projects = [], memb
   const [assigneeId, setAssigneeId]   = useState("");
   const [dueDate, setDueDate]         = useState("");
   const [error, setError]             = useState("");
+
+  const selectedProject = projects.find(p => String(p.id || p._id) === String(projectId)) || projects[0];
+
+  const availableAssignees = (() => {
+    const list = [];
+    const seen = new Set();
+
+    const addMember = (m) => {
+      if (!m) return;
+      const id = String(m.id || m._id || m.user?.id || m.user?._id || (typeof m.user === "string" ? m.user : ""));
+      if (!id || seen.has(id)) return;
+      const name = m.name || m.user?.name || "Member";
+      const role = m.role || m.systemRole || m.user?.role || "";
+      if (!isAdmin && (role === "admin" || m.systemRole === "admin" || m.user?.systemRole === "admin")) {
+        return;
+      }
+      seen.add(id);
+      list.push({ id, name, role });
+    };
+
+    if (selectedProject?.members && Array.isArray(selectedProject.members) && selectedProject.members.length > 0) {
+      if (selectedProject.owner) {
+        addMember(selectedProject.owner);
+      }
+      selectedProject.members.forEach(addMember);
+    } else if (members && members.length > 0) {
+      members.forEach(addMember);
+    } else if (selectedProject?.owner) {
+      addMember(selectedProject.owner);
+    }
+
+    return list;
+  })();
 
   useEffect(() => {
     if (initial) {
@@ -174,7 +211,7 @@ export default function TaskModal({ open, onClose, onSubmit, projects = [], memb
               <label className="label" htmlFor="t-ass">Assignee</label>
               <select id="t-ass" className="input" value={assigneeId} onChange={e => handleFieldChange(setAssigneeId, e.target.value)}>
                 <option value="">Unassigned</option>
-                {members.map(m => (
+                {availableAssignees.map(m => (
                   <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>

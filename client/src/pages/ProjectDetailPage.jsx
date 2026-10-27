@@ -98,6 +98,21 @@ export default function ProjectDetailPage() {
     load();
   }, [id]);
 
+  const projectMembersList = project ? [
+    ...(project.owner ? [{
+      id: project.owner.id || project.owner._id,
+      name: project.owner.name,
+      email: project.owner.email,
+      role: "owner",
+    }] : []),
+    ...(project.members || []).map(m => ({
+      id: m.user?.id || m.user?._id || (typeof m.user === "string" ? m.user : ""),
+      name: m.user?.name || "Member",
+      email: m.user?.email || "",
+      role: m.role || "member",
+    })),
+  ] : [];
+
   // Project update
   async function handleUpdate(values) {
     setPending(true);
@@ -284,8 +299,6 @@ export default function ProjectDetailPage() {
       (t.taskCode && t.taskCode.toLowerCase().includes(taskSearch.toLowerCase()));
     return matchStatus && matchSearch;
   });
-
-  const projectMembersList = (project.members || []).map(m => m.user).filter(Boolean);
 
   return (
     <section className="fade-in">

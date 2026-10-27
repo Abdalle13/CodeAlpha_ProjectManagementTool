@@ -163,7 +163,8 @@ export const createTask = asyncHandler(async (req, res) => {
     if (!mongoose.isValidObjectId(req.body.assigneeId)) {
       throw new AppError("Choose a member of this project as the assignee.", 400, "VALIDATION_ERROR");
     }
-    const isMember = project.members.some((m) => m.user?._id?.equals(req.body.assigneeId) || m.user?.equals?.(req.body.assigneeId));
+    const isOwner = (project.owner?._id && project.owner._id.equals(req.body.assigneeId)) || (project.owner && project.owner.equals && project.owner.equals(req.body.assigneeId));
+    const isMember = isOwner || project.members.some((m) => m.user?._id?.equals(req.body.assigneeId) || m.user?.equals?.(req.body.assigneeId));
     if (!isMember) {
       throw new AppError("Choose a member of this project as the assignee.", 400, "VALIDATION_ERROR");
     }
@@ -278,7 +279,8 @@ export const updateTask = asyncHandler(async (req, res) => {
       if (!mongoose.isValidObjectId(req.body.assigneeId)) {
         throw new AppError("Choose a member of this project as the assignee.", 400, "VALIDATION_ERROR");
       }
-      const isMember = req.project.members.some(
+      const isOwner = (req.project.owner?._id && req.project.owner._id.equals(req.body.assigneeId)) || (req.project.owner && req.project.owner.equals && req.project.owner.equals(req.body.assigneeId));
+      const isMember = isOwner || req.project.members.some(
         (m) => m.user?._id?.equals(req.body.assigneeId) || m.user?.equals?.(req.body.assigneeId)
       );
       if (!isMember) {

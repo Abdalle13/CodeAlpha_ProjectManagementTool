@@ -34,9 +34,19 @@ export const listTaskComments = asyncHandler(async (req, res) => {
 
 export const createTaskComment = asyncHandler(async (req, res) => {
   const task = await loadProjectTask(req.project._id, req.params.taskId);
-  const body = typeof req.body?.body === "string" ? req.body.body.trim() : typeof req.body?.content === "string" ? req.body.content.trim() : "";
-  if (!body || body.length > 2000) {
-    throw new AppError("Comment must be between 1 and 2000 characters.", 400, "VALIDATION_ERROR");
+  let body = "";
+  if (typeof req.body === "string") {
+    body = req.body.trim();
+  } else if (req.body && typeof req.body.body === "string") {
+    body = req.body.body.trim();
+  } else if (req.body && typeof req.body.content === "string") {
+    body = req.body.content.trim();
+  }
+  if (!body) {
+    throw new AppError("Comment cannot be empty.", 400, "VALIDATION_ERROR");
+  }
+  if (body.length > 2000) {
+    throw new AppError("Comment must be under 2000 characters.", 400, "VALIDATION_ERROR");
   }
 
   const comment = await Comment.create({
