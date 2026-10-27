@@ -84,12 +84,11 @@ export const deleteTaskComment = asyncHandler(async (req, res) => {
     throw new AppError("Comment not found.", 404, "NOT_FOUND");
   }
 
-  const isAuthor = comment.author?.equals(req.user._id);
+  const isAuthor = comment.author && (comment.author.equals ? comment.author.equals(req.user._id) : String(comment.author) === String(req.user._id));
   const isGlobalAdmin = req.user.systemRole === "admin" || req.user.role === "admin";
-  const isProjectOwner = req.project.owner && (req.project.owner._id?.equals(req.user._id) || req.project.owner.equals?.(req.user._id));
 
-  if (!isAuthor && !isGlobalAdmin && !isProjectOwner) {
-    throw new AppError("You can only delete your own comments.", 403, "FORBIDDEN");
+  if (!isAuthor && !isGlobalAdmin) {
+    throw new AppError("Only the author of this comment can delete it.", 403, "FORBIDDEN");
   }
 
   await comment.deleteOne();

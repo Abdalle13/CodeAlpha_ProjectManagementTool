@@ -35,7 +35,7 @@ function AuthSpinner() {
           textTransform: "uppercase",
         }}
       >
-        Taskora
+        Loading Taskora...
       </span>
       <style>{`@keyframes auth-spin { to { transform: rotate(360deg); } }`}</style>
     </div>

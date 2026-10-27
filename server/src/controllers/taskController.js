@@ -19,7 +19,7 @@ function parseDueDate(value) {
 
 async function reloadTask(taskId) {
   return Task.findById(taskId)
-    .populate("project", "name key")
+    .populate("project", "name key owner")
     .populate("assignee", "name email role avatarColor")
     .populate("reporter", "name email role avatarColor")
     .populate("createdBy", "name email role avatarColor");
@@ -27,11 +27,31 @@ async function reloadTask(taskId) {
 
 function canManageTask(task, req) {
   const isGlobalAdmin = req.user.systemRole === "admin" || req.user.role === "admin";
-  const isProjectOwner = req.project?.owner && (req.project.owner._id?.equals(req.user._id) || req.project.owner.equals?.(req.user._id));
-  const isProjectLead = isProjectOwner || ["owner", "admin", "lead"].includes(req.membership?.role);
-  const isCreator = (task.createdBy?._id && task.createdBy._id.equals(req.user._id)) || (task.createdBy && task.createdBy.equals && task.createdBy.equals(req.user._id));
-  const isAssignee = (task.assignee?._id && task.assignee._id.equals(req.user._id)) || (task.assignee && task.assignee.equals && task.assignee.equals(req.user._id));
-  return isGlobalAdmin || isProjectLead || isCreator || isAssignee;
+  const projectOwner = req.project?.owner;
+  const isProjectOwner = projectOwner && (
+    (projectOwner._id && projectOwner._id.equals(req.user._id)) ||
+    (projectOwner.equals && projectOwner.equals(req.user._id)) ||
+    String(projectOwner) === String(req.user._id)
+  );
+  const isCreator = Boolean(
+    (task.createdBy?._id && task.createdBy._id.equals(req.user._id)) ||
+    (task.createdBy && task.createdBy.equals && task.createdBy.equals(req.user._id)) ||
+    (task.reporter?._id && task.reporter._id.equals(req.user._id)) ||
+    (task.reporter && task.reporter.equals && task.reporter.equals(req.user._id)) ||
+    (task.createdBy && String(task.createdBy) === String(req.user._id)) ||
+    (task.reporter && String(task.reporter) === String(req.user._id))
+  );
+  return Boolean(isGlobalAdmin || isProjectOwner || isCreator);
+}
+
+function canChangeTaskStatus(task, req) {
+  if (canManageTask(task, req)) return true;
+  const isAssignee = Boolean(
+    (task.assignee?._id && task.assignee._id.equals(req.user._id)) ||
+    (task.assignee && task.assignee.equals && task.assignee.equals(req.user._id)) ||
+    (task.assignee && String(task.assignee) === String(req.user._id))
+  );
+  return isAssignee;
 }
 
 export const listProjectTasks = asyncHandler(async (req, res) => {
@@ -57,7 +77,7 @@ export const listProjectTasks = asyncHandler(async (req, res) => {
 
   const tasks = await Task.find(filter)
     .sort({ createdAt: -1 })
-    .populate("project", "name key")
+    .populate("project", "name key owner")
     .populate("assignee", "name email role avatarColor")
     .populate("reporter", "name email role avatarColor")
     .populate("createdBy", "name email role avatarColor");
@@ -72,7 +92,10 @@ export const listProjectTasks = asyncHandler(async (req, res) => {
 });
 
 export const listAllAccessibleTasks = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query);
+  if (req.query.limit !== undefined && (Number(req.query.limit) > 50 || Number(req.query.limit) < 1 || !Number.isInteger(Number(req.query.limit)))) {
+    throw new AppError("Limit must be an integer between 1 and 50.", 400, "VALIDATION_ERROR");
+  }
+  const { page, limit, skip } = parsePagination(req.query, 50);
   const userRole = req.user.role || req.user.systemRole;
 
   let projectFilter = {};
@@ -124,7 +147,7 @@ export const listAllAccessibleTasks = asyncHandler(async (req, res) => {
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("project", "name key")
+      .populate("project", "name key owner")
       .populate("assignee", "name email role avatarColor")
       .populate("reporter", "name email role avatarColor")
       .populate("createdBy", "name email role avatarColor"),
@@ -330,6 +353,10 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
     throw new AppError("Task not found.", 404, "NOT_FOUND");
   }
 
+  if (!canChangeTaskStatus(task, req)) {
+    throw new AppError("You do not have permission to change the status of this task.", 403, "FORBIDDEN");
+  }
+
   const oldStatus = task.status;
   task.status = status;
   await task.save();
@@ -405,16 +432,7 @@ export const deleteTask = asyncHandler(async (req, res) => {
     throw new AppError("Task not found.", 404, "NOT_FOUND");
   }
 
-  const isProjectOwner = req.project?.owner && (req.project.owner._id?.equals(req.user._id) || req.project.owner.equals?.(req.user._id));
-  const isOwnerOrAdmin =
-    isProjectOwner ||
-    ["owner", "admin", "lead"].includes(req.membership?.role) ||
-    req.user.systemRole === "admin" ||
-    req.user.role === "admin";
-
-  const isCreator = (task.createdBy?._id && task.createdBy._id.equals(req.user._id)) || (task.createdBy && task.createdBy.equals && task.createdBy.equals(req.user._id));
-
-  if (!isOwnerOrAdmin && !isCreator) {
+  if (!canManageTask(task, req)) {
     throw new AppError("You do not have permission to delete this task.", 403, "FORBIDDEN");
   }
 

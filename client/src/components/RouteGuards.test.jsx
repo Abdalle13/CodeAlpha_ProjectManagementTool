@@ -25,7 +25,7 @@ function renderWithAuth(value) {
 describe("ProtectedRoute", () => {
   it("shows a loading state while the session is checked", () => {
     renderWithAuth({ user: null, status: "loading", isAuthenticated: false });
-    expect(screen.document.body).toHaveTextContent(/loading taskora/i);
+    expect(document.body).toHaveTextContent(/loading taskora/i);
   });
 
   it("redirects anonymous visitors to login", () => {

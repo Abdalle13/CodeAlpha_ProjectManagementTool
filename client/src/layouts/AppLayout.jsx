@@ -10,7 +10,7 @@ const WORKSPACE_NAV = [
   { to: "/projects",  label: "Projects",    end: false, icon: IconProjects },
   { to: "/tasks",     label: "Tasks",       end: false, icon: IconTasks },
   { to: "/members",   label: "Members",     end: false, icon: IconTeam },
-  { to: "/analytics", label: "Analytics",   end: false, icon: IconAnalytics },
+  { to: "/analytics", label: "Analytics & Reports", end: false, icon: IconAnalytics },
   { to: "/activity",  label: "Activity",    end: false, icon: IconActivity },
 ];
 

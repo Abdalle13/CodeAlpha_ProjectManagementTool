@@ -65,9 +65,21 @@ export const login = asyncHandler(async (req, res) => {
     : { name: { $regex: new RegExp(`^${escapeRegex(loginInput)}$`, "i") } };
 
   const user = await User.findOne(query).select("+passwordHash");
-  const matches = user ? await bcrypt.compare(password, user.passwordHash) : false;
-  if (!user || !user.isActive || !matches) {
-    throw new AppError("Invalid username, email, or password.", 401, "UNAUTHORIZED");
+  if (!user) {
+    throw new AppError(
+      isEmail
+        ? "No account found with this email address."
+        : "No account found with this username.",
+      404,
+      "NOT_FOUND"
+    );
+  }
+  if (!user.isActive) {
+    throw new AppError("This account has been deactivated. Please contact support.", 401, "ACCOUNT_INACTIVE");
+  }
+  const matches = await bcrypt.compare(password, user.passwordHash);
+  if (!matches) {
+    throw new AppError("Incorrect password. Please try again.", 401, "UNAUTHORIZED");
   }
 
   const token = signAuthToken(user.id);

@@ -3,9 +3,10 @@ export function publicComment(comment) {
     id: String(comment._id || comment.id),
     project: String(comment.project),
     task: String(comment.task),
-    author: comment.author?.name
-      ? { id: String(comment.author._id), name: comment.author.name }
-      : { id: String(comment.author) },
+    author: {
+      id: String(comment.author?._id || comment.author?.id || comment.author || ""),
+      name: comment.author?.name || "Member",
+    },
     body: comment.body,
     createdAt: comment.createdAt,
     updatedAt: comment.updatedAt,

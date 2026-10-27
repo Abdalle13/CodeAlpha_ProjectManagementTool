@@ -13,6 +13,8 @@ vi.mock("../lib/api.js", () => ({
   createProjectTask: vi.fn(),
   listTaskComments: vi.fn(),
   createTaskComment: vi.fn(),
+  deleteTaskComment: vi.fn(),
+  listTeamMembers: vi.fn().mockResolvedValue({ data: { items: [] } }),
   updateProjectTask: vi.fn(),
   deleteProjectTask: vi.fn(),
   getErrorMessage: (error, fallback) => error?.response?.data?.error?.message || fallback,

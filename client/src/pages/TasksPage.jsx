@@ -146,21 +146,35 @@ export default function TasksPage() {
     if (!user) return false;
     if (user.systemRole === "admin" || user.role === "admin") return true;
     const proj = projects.find(p => String(p.id || p._id) === String(task.project?.id || task.project));
-    const isOwner = proj && String(proj.owner?.id || proj.owner?._id || proj.owner || "") === String(user.id);
+    const isOwner = (proj && String(proj.owner?.id || proj.owner?._id || proj.owner || "") === String(user.id)) ||
+                    (task.project?.owner && String(task.project.owner.id || task.project.owner._id || task.project.owner) === String(user.id));
     if (isOwner) return true;
-    const isCreator = String(task.createdBy?.id || task.createdBy?._id || task.createdBy || "") === String(user.id);
-    const isAssignee = String(task.assignee?.id || task.assignee?._id || task.assignee || "") === String(user.id);
-    return isCreator || isAssignee;
+    const creatorId = task.createdBy?.id || task.createdBy?._id || task.createdBy || task.reporter?.id || task.reporter?._id || task.reporter;
+    return Boolean(creatorId && String(creatorId) === String(user.id));
   }
 
   function canDeleteTask(task) {
     if (!user) return false;
     if (user.systemRole === "admin" || user.role === "admin") return true;
     const proj = projects.find(p => String(p.id || p._id) === String(task.project?.id || task.project));
-    const isOwner = proj && String(proj.owner?.id || proj.owner?._id || proj.owner || "") === String(user.id);
+    const isOwner = (proj && String(proj.owner?.id || proj.owner?._id || proj.owner || "") === String(user.id)) ||
+                    (task.project?.owner && String(task.project.owner.id || task.project.owner._id || task.project.owner) === String(user.id));
     if (isOwner) return true;
-    const isCreator = String(task.createdBy?.id || task.createdBy?._id || task.createdBy || "") === String(user.id);
-    return isCreator;
+    const creatorId = task.createdBy?.id || task.createdBy?._id || task.createdBy || task.reporter?.id || task.reporter?._id || task.reporter;
+    return Boolean(creatorId && String(creatorId) === String(user.id));
+  }
+
+  function canChangeStatus(task) {
+    if (!user) return false;
+    if (user.systemRole === "admin" || user.role === "admin") return true;
+    const proj = projects.find(p => String(p.id || p._id) === String(task.project?.id || task.project));
+    const isOwner = (proj && String(proj.owner?.id || proj.owner?._id || proj.owner || "") === String(user.id)) ||
+                    (task.project?.owner && String(task.project.owner.id || task.project.owner._id || task.project.owner) === String(user.id));
+    if (isOwner) return true;
+    const creatorId = task.createdBy?.id || task.createdBy?._id || task.createdBy || task.reporter?.id || task.reporter?._id || task.reporter;
+    if (creatorId && String(creatorId) === String(user.id)) return true;
+    const assigneeId = task.assignee?.id || task.assignee?._id || task.assignee;
+    return Boolean(assigneeId && String(assigneeId) === String(user.id));
   }
 
   async function handleDeleteComment(task, commentId) {
@@ -305,8 +319,9 @@ export default function TasksPage() {
                             className="input"
                             style={{ fontSize: "0.775rem", height: "1.9rem", marginBottom: "0.5rem" }}
                             value={task.status === "done" ? "completed" : task.status}
-                            disabled={pending || !canEditTask(task)}
+                            disabled={pending || !canChangeStatus(task)}
                             onChange={e => handleStatusChange(task, e.target.value)}
+                            aria-label={`Status for ${task.title}`}
                           >
                             {COLUMNS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                           </select>
@@ -318,6 +333,7 @@ export default function TasksPage() {
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => { setEditTarget(task); setModalOpen(true); }}
                                 title="Edit task"
+                                aria-label={`Edit ${task.title}`}
                               >
                                 <IconEdit /> Edit
                               </button>
@@ -337,6 +353,7 @@ export default function TasksPage() {
                                 style={{ color: "var(--red)", marginLeft: "auto" }}
                                 onClick={() => setDeleteTarget(task)}
                                 title="Delete task"
+                                aria-label={`Delete ${task.title}`}
                               >
                                 <IconTrash />
                               </button>
@@ -354,25 +371,46 @@ export default function TasksPage() {
                                   comments[task.id].map(c => {
                                     const isAuthor = String(c.author?.id || c.author?._id || "") === String(user?.id);
                                     const isGlobalAdmin = user?.systemRole === "admin" || user?.role === "admin";
-                                    const proj = projects.find(p => String(p.id || p._id) === String(task.project?.id || task.project));
-                                    const isProjOwner = proj && String(proj.owner?.id || proj.owner?._id || proj.owner || "") === String(user?.id);
-                                    const canDeleteComment = isAuthor || isGlobalAdmin || isProjOwner;
+                                    const canDeleteComment = isAuthor || isGlobalAdmin;
 
                                     return (
-                                      <div key={c.id} style={{ background: "var(--surface2)", padding: "0.4rem 0.6rem", borderRadius: "6px", fontSize: "0.75rem", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
-                                        <div>
-                                          <span style={{ fontWeight: 600 }}>{c.author?.name}: </span>
-                                          <span>{c.content || c.body}</span>
+                                      <div key={c.id} style={{ background: "var(--surface2)", padding: "0.45rem 0.65rem", borderRadius: "8px", fontSize: "0.78rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", border: "1px solid var(--border)" }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.15rem" }}>
+                                            <span style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.76rem" }}>{c.author?.name || "Member"}</span>
+                                            {c.createdAt && (
+                                              <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
+                                                {formatDate(c.createdAt)}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div style={{ color: "var(--ink2)", wordBreak: "break-word", lineHeight: 1.35 }}>
+                                            {c.content || c.body}
+                                          </div>
                                         </div>
                                         {canDeleteComment && (
                                           <button
                                             type="button"
                                             onClick={() => handleDeleteComment(task, c.id)}
                                             className="btn btn-ghost btn-sm"
-                                            style={{ padding: "0 0.35rem", height: "1.25rem", color: "var(--red)", fontSize: "0.75rem", lineHeight: 1 }}
+                                            style={{
+                                              padding: "0.2rem 0.45rem",
+                                              height: "1.5rem",
+                                              color: "var(--red)",
+                                              fontSize: "0.72rem",
+                                              display: "inline-flex",
+                                              alignItems: "center",
+                                              gap: "0.25rem",
+                                              borderRadius: "6px",
+                                              border: "1px solid rgba(239, 68, 68, 0.25)",
+                                              background: "rgba(239, 68, 68, 0.06)",
+                                              flexShrink: 0,
+                                            }}
                                             title="Delete comment"
+                                            aria-label={`Delete comment by ${c.author?.name || "user"}`}
                                           >
-                                            ✕
+                                            <IconTrash />
+                                            <span>Delete</span>
                                           </button>
                                         )}
                                       </div>
@@ -385,11 +423,12 @@ export default function TasksPage() {
                                   className="input"
                                   style={{ flex: 1, fontSize: "0.75rem", height: "1.85rem" }}
                                   placeholder="Add a comment…"
+                                  aria-label={`Add comment to ${task.title}`}
                                   value={commentDraft[task.id] || ""}
                                   onChange={e => setCommentDraft(d => ({ ...d, [task.id]: e.target.value }))}
                                   required
                                 />
-                                <button type="submit" className="btn btn-primary btn-sm">Post</button>
+                                <button type="submit" className="btn btn-primary btn-sm" aria-label="Comment">Post</button>
                               </form>
                             </div>
                           )}

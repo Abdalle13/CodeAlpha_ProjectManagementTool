@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import ProjectForm from "../components/ProjectForm.jsx";
@@ -8,12 +8,15 @@ import { useAuth } from "../context/AuthContext.jsx";
 import {
   addProjectMember,
   createProjectTask,
+  createTaskComment,
   deleteProject,
   deleteProjectTask,
+  deleteTaskComment,
   getErrorMessage,
   getProject,
   listProjectActivity,
   listProjectTasks,
+  listTaskComments,
   removeProjectMember,
   updateProject,
   updateProjectMember,
@@ -21,6 +24,17 @@ import {
 } from "../lib/api.js";
 import { canManageProject, formatDate, statusLabel, projectStatusBadge } from "../lib/projects.js";
 import { Avatar } from "../layouts/AppLayout.jsx";
+
+function IconTrash() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M9 6V4h6v2" />
+    </svg>
+  );
+}
 
 const ROLE_BADGE = { owner: "badge-purple", admin: "badge-blue", member: "badge-gray", lead: "badge-purple", contributor: "badge-gray" };
 const ROLE_LABEL = { owner: "Project Lead", admin: "Manager", member: "Team Member", lead: "Project Lead", contributor: "Contributor" };
@@ -56,13 +70,11 @@ export default function ProjectDetailPage() {
     if (currentUser.systemRole === "admin" || currentUser.role === "admin") return true;
     const isOwner = project && (
       String(project.owner?.id || project.owner?._id || project.owner || "") === String(currentUser.id) ||
-      project.myRole === "owner" ||
-      project.myRole === "admin"
+      project.myRole === "owner"
     );
     if (isOwner) return true;
-    const isCreator = String(task.createdBy?.id || task.createdBy?._id || task.createdBy || "") === String(currentUser.id);
-    const isAssignee = String(task.assignee?.id || task.assignee?._id || task.assignee || "") === String(currentUser.id);
-    return isCreator || isAssignee;
+    const creatorId = task.createdBy?.id || task.createdBy?._id || task.createdBy || task.reporter?.id || task.reporter?._id || task.reporter;
+    return Boolean(creatorId && String(creatorId) === String(currentUser.id));
   }
 
   function canDeleteTask(task) {
@@ -73,8 +85,22 @@ export default function ProjectDetailPage() {
       project.myRole === "owner"
     );
     if (isOwner) return true;
-    const isCreator = String(task.createdBy?.id || task.createdBy?._id || task.createdBy || "") === String(currentUser.id);
-    return isCreator;
+    const creatorId = task.createdBy?.id || task.createdBy?._id || task.createdBy || task.reporter?.id || task.reporter?._id || task.reporter;
+    return Boolean(creatorId && String(creatorId) === String(currentUser.id));
+  }
+
+  function canChangeTaskStatus(task) {
+    if (!currentUser) return false;
+    if (currentUser.systemRole === "admin" || currentUser.role === "admin") return true;
+    const isOwner = project && (
+      String(project.owner?.id || project.owner?._id || project.owner || "") === String(currentUser.id) ||
+      project.myRole === "owner"
+    );
+    if (isOwner) return true;
+    const creatorId = task.createdBy?.id || task.createdBy?._id || task.createdBy || task.reporter?.id || task.reporter?._id || task.reporter;
+    if (creatorId && String(creatorId) === String(currentUser.id)) return true;
+    const assigneeId = task.assignee?.id || task.assignee?._id || task.assignee;
+    return Boolean(assigneeId && String(assigneeId) === String(currentUser.id));
   }
 
   const [project, setProject]       = useState(null);
@@ -83,6 +109,51 @@ export default function ProjectDetailPage() {
   const [loading, setLoading]       = useState(true);
   const [toast, setToast]           = useState(null);
   const [taskModalError, setTaskModalError] = useState("");
+  const [comments, setComments]         = useState({});
+  const [commentDraft, setCommentDraft] = useState({});
+  const [openComments, setOpenComments] = useState("");
+
+  async function toggleComments(task) {
+    if (openComments === task.id) {
+      setOpenComments("");
+      return;
+    }
+    setOpenComments(task.id);
+    if (!comments[task.id]) {
+      try {
+        const res = await listTaskComments(id, task.id);
+        setComments(c => ({ ...c, [task.id]: res.data.items || [] }));
+      } catch (e) {
+        showToast(getErrorMessage(e, "Unable to load comments."), "error");
+      }
+    }
+  }
+
+  async function handleAddComment(e, task) {
+    e.preventDefault();
+    const body = String(commentDraft[task.id] || "").trim();
+    if (!body) return;
+    try {
+      const res = await createTaskComment(id, task.id, body);
+      setComments(c => ({ ...c, [task.id]: [...(c[task.id] || []), res.data.comment] }));
+      setCommentDraft(d => ({ ...d, [task.id]: "" }));
+    } catch (err) {
+      showToast(getErrorMessage(err, "Unable to post comment."), "error");
+    }
+  }
+
+  async function handleDeleteComment(task, commentId) {
+    try {
+      await deleteTaskComment(id, task.id, commentId);
+      setComments(c => ({
+        ...c,
+        [task.id]: (c[task.id] || []).filter(item => String(item.id) !== String(commentId))
+      }));
+      showToast("Comment deleted.", "success");
+    } catch (err) {
+      showToast(getErrorMessage(err, "Unable to delete comment."), "error");
+    }
+  }
 
   const [tab, setTab]               = useState("tasks"); // 'tasks' is default!
   const [viewMode, setViewMode]     = useState("board"); // 'board' | 'table'
@@ -661,7 +732,7 @@ export default function ProjectDetailPage() {
                                 className="input"
                                 style={{ flex: 1, height: "1.875rem", fontSize: "0.75rem", padding: "0 0.5rem" }}
                                 value={task.status}
-                                disabled={pending || !canEditTask(task)}
+                                disabled={pending || !canChangeTaskStatus(task)}
                                 onChange={e => handleTaskStatusChange(task, e.target.value)}
                               >
                                 {COLUMNS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -672,7 +743,7 @@ export default function ProjectDetailPage() {
                               <span style={{ fontSize: "0.75rem", color: "var(--ink2)", fontWeight: 500 }}>
                                 {task.assignee?.name ? `👤 ${task.assignee.name.split(" ")[0]}` : "Unassigned"}
                               </span>
-                              <div style={{ display: "flex", gap: "0.3rem" }}>
+                              <div style={{ display: "flex", gap: "0.3rem", alignItems: "center" }}>
                                 {canEditTask(task) && (
                                   <button
                                     type="button"
@@ -683,18 +754,98 @@ export default function ProjectDetailPage() {
                                     Edit
                                   </button>
                                 )}
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ height: "1.75rem", padding: "0 0.5rem", fontSize: "0.75rem" }}
+                                  onClick={() => toggleComments(task)}
+                                  title="Comments"
+                                >
+                                  💬 {openComments === task.id ? "Hide" : "Comments"}
+                                </button>
                                 {canDeleteTask(task) && (
                                   <button
                                     type="button"
                                     className="btn btn-ghost btn-sm"
                                     style={{ height: "1.75rem", padding: "0 0.4rem", color: "var(--red)" }}
                                     onClick={() => setDeleteTaskTarget(task)}
+                                    title="Delete task"
                                   >
-                                    ✕
+                                    <IconTrash />
                                   </button>
                                 )}
                               </div>
                             </div>
+
+                            {openComments === task.id && (
+                              <div style={{ marginTop: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem", display: "grid", gap: "0.4rem" }}>
+                                <div style={{ display: "grid", gap: "0.35rem", maxHeight: "8rem", overflowY: "auto" }}>
+                                  {(comments[task.id] || []).length === 0 ? (
+                                    <p style={{ margin: 0, fontSize: "0.725rem", color: "var(--muted)" }}>No comments yet.</p>
+                                  ) : (
+                                    comments[task.id].map(c => {
+                                      const isAuthor = String(c.author?.id || c.author?._id || "") === String(currentUser?.id);
+                                      const isGlobalAdmin = currentUser?.systemRole === "admin" || currentUser?.role === "admin";
+                                      const canDeleteComment = isAuthor || isGlobalAdmin;
+
+                                      return (
+                                        <div key={c.id} style={{ background: "var(--surface2)", padding: "0.45rem 0.65rem", borderRadius: "8px", fontSize: "0.78rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", border: "1px solid var(--border)" }}>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.15rem" }}>
+                                              <span style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.76rem" }}>{c.author?.name || "Member"}</span>
+                                              {c.createdAt && (
+                                                <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
+                                                  {formatDate(c.createdAt)}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div style={{ color: "var(--ink2)", wordBreak: "break-word", lineHeight: 1.35 }}>
+                                              {c.content || c.body}
+                                            </div>
+                                          </div>
+                                          {canDeleteComment && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteComment(task, c.id)}
+                                              className="btn btn-ghost btn-sm"
+                                              style={{
+                                                padding: "0.2rem 0.45rem",
+                                                height: "1.5rem",
+                                                color: "var(--red)",
+                                                fontSize: "0.72rem",
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "0.25rem",
+                                                borderRadius: "6px",
+                                                border: "1px solid rgba(239, 68, 68, 0.25)",
+                                                background: "rgba(239, 68, 68, 0.06)",
+                                                flexShrink: 0,
+                                              }}
+                                              title="Delete comment"
+                                            >
+                                              <IconTrash />
+                                              <span>Delete</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                                <form onSubmit={e => handleAddComment(e, task)} style={{ display: "flex", gap: "0.35rem" }}>
+                                  <input
+                                    className="input"
+                                    style={{ fontSize: "0.75rem", height: "1.75rem", flex: 1 }}
+                                    placeholder="Add a comment…"
+                                    value={commentDraft[task.id] || ""}
+                                    onChange={e => setCommentDraft({ ...commentDraft, [task.id]: e.target.value })}
+                                  />
+                                  <button type="submit" className="btn btn-primary btn-sm" style={{ height: "1.75rem", padding: "0 0.55rem", fontSize: "0.75rem" }}>
+                                    Post
+                                  </button>
+                                </form>
+                              </div>
+                            )}
                           </div>
                         ))
                       )}
@@ -722,8 +873,9 @@ export default function ProjectDetailPage() {
                     </thead>
                     <tbody>
                       {filteredTasks.map(t => (
-                        <tr key={t.id}>
-                          <td className="nowrap" style={{ fontWeight: 700, color: "var(--accent)" }}>{t.taskCode || "TASK"}</td>
+                        <Fragment key={t.id}>
+                          <tr>
+                            <td className="nowrap" style={{ fontWeight: 700, color: "var(--accent)" }}>{t.taskCode || "TASK"}</td>
                           <td style={{ fontWeight: 600, color: "var(--ink)" }}>{t.title}</td>
                           <td className="nowrap">
                             <span className={"badge " + (t.status === "completed" || t.status === "done" ? "badge-green" : t.status === "in_progress" ? "badge-blue" : "badge-gray")}>
@@ -733,7 +885,7 @@ export default function ProjectDetailPage() {
                           <td className="nowrap">{t.assignee?.name || "Unassigned"}</td>
                           <td className="nowrap">{t.dueDate ? formatDate(t.dueDate) : "—"}</td>
                           <td className="nowrap" style={{ textAlign: "right" }}>
-                            <div style={{ display: "flex", gap: "0.3rem", justifyContent: "flex-end" }}>
+                            <div style={{ display: "flex", gap: "0.3rem", justifyContent: "flex-end", alignItems: "center" }}>
                               {canEditTask(t) && (
                                 <button
                                   type="button"
@@ -743,20 +895,103 @@ export default function ProjectDetailPage() {
                                   Edit
                                 </button>
                               )}
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => toggleComments(t)}
+                                title="Comments"
+                              >
+                                💬
+                              </button>
                               {canDeleteTask(t) && (
                                 <button
                                   type="button"
                                   className="btn btn-ghost btn-sm"
-                                  style={{ color: "var(--red)", padding: "0 0.35rem" }}
+                                  style={{ color: "var(--red)", padding: "0 0.4rem" }}
                                   onClick={() => setDeleteTaskTarget(t)}
+                                  title="Delete task"
                                 >
-                                  ✕
+                                  <IconTrash />
                                 </button>
                               )}
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        {openComments === t.id && (
+                          <tr key={`${t.id}-comments-row`}>
+                            <td colSpan={6} style={{ background: "var(--surface)", padding: "0.75rem 1rem", borderBottom: "1px solid var(--border)" }}>
+                              <div style={{ display: "grid", gap: "0.4rem" }}>
+                                <div style={{ display: "grid", gap: "0.35rem", maxHeight: "8rem", overflowY: "auto" }}>
+                                  {(comments[t.id] || []).length === 0 ? (
+                                    <p style={{ margin: 0, fontSize: "0.725rem", color: "var(--muted)" }}>No comments yet.</p>
+                                  ) : (
+                                    comments[t.id].map(c => {
+                                      const isAuthor = String(c.author?.id || c.author?._id || "") === String(currentUser?.id);
+                                      const isGlobalAdmin = currentUser?.systemRole === "admin" || currentUser?.role === "admin";
+                                      const canDeleteComment = isAuthor || isGlobalAdmin;
+
+                                      return (
+                                        <div key={c.id} style={{ background: "var(--surface2)", padding: "0.45rem 0.65rem", borderRadius: "8px", fontSize: "0.78rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", border: "1px solid var(--border)" }}>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.15rem" }}>
+                                              <span style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.76rem" }}>{c.author?.name || "Member"}</span>
+                                              {c.createdAt && (
+                                                <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
+                                                  {formatDate(c.createdAt)}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div style={{ color: "var(--ink2)", wordBreak: "break-word", lineHeight: 1.35 }}>
+                                              {c.content || c.body}
+                                            </div>
+                                          </div>
+                                          {canDeleteComment && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteComment(t, c.id)}
+                                              className="btn btn-ghost btn-sm"
+                                              style={{
+                                                padding: "0.2rem 0.45rem",
+                                                height: "1.5rem",
+                                                color: "var(--red)",
+                                                fontSize: "0.72rem",
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "0.25rem",
+                                                borderRadius: "6px",
+                                                border: "1px solid rgba(239, 68, 68, 0.25)",
+                                                background: "rgba(239, 68, 68, 0.06)",
+                                                flexShrink: 0,
+                                              }}
+                                              title="Delete comment"
+                                            >
+                                              <IconTrash />
+                                              <span>Delete</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                                <form onSubmit={e => handleAddComment(e, t)} style={{ display: "flex", gap: "0.35rem", maxWidth: "500px" }}>
+                                  <input
+                                    className="input"
+                                    style={{ fontSize: "0.75rem", height: "1.75rem", flex: 1 }}
+                                    placeholder="Add a comment…"
+                                    value={commentDraft[t.id] || ""}
+                                    onChange={e => setCommentDraft({ ...commentDraft, [t.id]: e.target.value })}
+                                  />
+                                  <button type="submit" className="btn btn-primary btn-sm" style={{ height: "1.75rem", padding: "0 0.55rem", fontSize: "0.75rem" }}>
+                                    Post
+                                  </button>
+                                </form>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    ))}
                     </tbody>
                   </table>
                 </div>
@@ -799,18 +1034,98 @@ export default function ProjectDetailPage() {
                             Edit
                           </button>
                         )}
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{ height: "1.75rem", padding: "0 0.55rem", fontSize: "0.75rem" }}
+                          onClick={() => toggleComments(t)}
+                          title="Comments"
+                        >
+                          💬
+                        </button>
                         {canDeleteTask(t) && (
                           <button
                             type="button"
                             className="btn btn-ghost btn-sm"
                             style={{ height: "1.75rem", padding: "0 0.4rem", color: "var(--red)" }}
                             onClick={() => setDeleteTaskTarget(t)}
+                            title="Delete task"
                           >
-                            ✕
+                            <IconTrash />
                           </button>
                         )}
                       </div>
                     </div>
+
+                    {openComments === t.id && (
+                      <div style={{ marginTop: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem", display: "grid", gap: "0.4rem" }}>
+                        <div style={{ display: "grid", gap: "0.35rem", maxHeight: "8rem", overflowY: "auto" }}>
+                          {(comments[t.id] || []).length === 0 ? (
+                            <p style={{ margin: 0, fontSize: "0.725rem", color: "var(--muted)" }}>No comments yet.</p>
+                          ) : (
+                            comments[t.id].map(c => {
+                              const isAuthor = String(c.author?.id || c.author?._id || "") === String(currentUser?.id);
+                              const isGlobalAdmin = currentUser?.systemRole === "admin" || currentUser?.role === "admin";
+                              const canDeleteComment = isAuthor || isGlobalAdmin;
+
+                              return (
+                                <div key={c.id} style={{ background: "var(--surface2)", padding: "0.45rem 0.65rem", borderRadius: "8px", fontSize: "0.78rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", border: "1px solid var(--border)" }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.15rem" }}>
+                                      <span style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.76rem" }}>{c.author?.name || "Member"}</span>
+                                      {c.createdAt && (
+                                        <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
+                                          {formatDate(c.createdAt)}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ color: "var(--ink2)", wordBreak: "break-word", lineHeight: 1.35 }}>
+                                      {c.content || c.body}
+                                    </div>
+                                  </div>
+                                  {canDeleteComment && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteComment(t, c.id)}
+                                      className="btn btn-ghost btn-sm"
+                                      style={{
+                                        padding: "0.2rem 0.45rem",
+                                        height: "1.5rem",
+                                        color: "var(--red)",
+                                        fontSize: "0.72rem",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "0.25rem",
+                                        borderRadius: "6px",
+                                        border: "1px solid rgba(239, 68, 68, 0.25)",
+                                        background: "rgba(239, 68, 68, 0.06)",
+                                        flexShrink: 0,
+                                      }}
+                                      title="Delete comment"
+                                    >
+                                      <IconTrash />
+                                      <span>Delete</span>
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                        <form onSubmit={e => handleAddComment(e, t)} style={{ display: "flex", gap: "0.35rem" }}>
+                          <input
+                            className="input"
+                            style={{ fontSize: "0.75rem", height: "1.75rem", flex: 1 }}
+                            placeholder="Add a comment…"
+                            value={commentDraft[t.id] || ""}
+                            onChange={e => setCommentDraft({ ...commentDraft, [t.id]: e.target.value })}
+                          />
+                          <button type="submit" className="btn btn-primary btn-sm" style={{ height: "1.75rem", padding: "0 0.55rem", fontSize: "0.75rem" }}>
+                            Post
+                          </button>
+                        </form>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

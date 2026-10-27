@@ -124,9 +124,14 @@ export default function TeamPage() {
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 19rem), 1fr))", gap: "1.25rem" }}>
-          {filtered.map(m => {
+          {[...filtered].sort((a, b) => {
+            const aIsMe = String(a.id || a._id) === String(currentUser?.id);
+            const bIsMe = String(b.id || b._id) === String(currentUser?.id);
+            return aIsMe ? -1 : bIsMe ? 1 : 0;
+          }).map(m => {
             const memberId = String(m.id || m._id || "");
             const assignedProjects = memberProjectsMap[memberId] || [];
+            const isMe = memberId === String(currentUser?.id);
 
             return (
               <div
@@ -139,15 +144,30 @@ export default function TeamPage() {
                   justifyContent: "space-between",
                   borderRadius: "12px",
                   gap: "1rem",
+                  ...(isMe ? { border: "1.5px solid var(--accent)", boxShadow: "0 0 0 3px var(--accent-soft)" } : {}),
                 }}
               >
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.875rem", marginBottom: "0.875rem" }}>
                     <Avatar name={m.name} size={46} />
                     <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {m.name}
-                      </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {m.name}
+                        </p>
+                        {isMe && (
+                          <span style={{
+                            fontSize: "0.65rem",
+                            fontWeight: 700,
+                            padding: "1px 7px",
+                            borderRadius: "999px",
+                            background: "var(--accent)",
+                            color: "#fff",
+                            letterSpacing: "0.03em",
+                            flexShrink: 0,
+                          }}>You</span>
+                        )}
+                      </div>
                       <p style={{ margin: "0.15rem 0 0", color: "var(--muted)", fontSize: "0.775rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {m.email}
                       </p>

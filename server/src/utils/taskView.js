@@ -12,7 +12,7 @@ export function publicTask(task) {
     id: String(task._id || task.id),
     taskCode: code,
     project: task.project?._id
-      ? { id: String(task.project._id), name: task.project.name, key: task.project.key || "PRJ" }
+      ? { id: String(task.project._id), name: task.project.name, key: task.project.key || "PRJ", owner: mapUser(task.project.owner) }
       : { id: String(task.project) },
     title: task.title,
     description: task.description || "",
