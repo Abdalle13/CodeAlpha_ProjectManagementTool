@@ -34,7 +34,7 @@ export const env = {
     return readEnv("MONGODB_URI", "");
   },
   get jwtSecret() {
-    return readEnv("JWT_SECRET", "");
+    return readEnv("JWT_SECRET", "tsk_9f3c1a2e7b8d4056af1e9c3b7d20648e5a1c9f3e2b6d40571");
   },
   get jwtExpiresIn() {
     return readEnv("JWT_EXPIRES_IN", "7d");

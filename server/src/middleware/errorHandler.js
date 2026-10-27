@@ -32,14 +32,8 @@ export function errorHandler(err, _req, res, _next) {
   }
 
   const status = Number(err.status || err.statusCode) || 500;
-  const message =
-    status >= 500 && isProduction()
-      ? "An unexpected error occurred."
-      : err.message || "An unexpected error occurred.";
-
-  if (!isProduction() && status >= 500) {
-    console.error(err);
-  }
+  console.error(`[API Error ${status}]:`, err?.stack || err);
+  const message = err.message || "An unexpected error occurred.";
 
   res.status(status).json({
     success: false,
