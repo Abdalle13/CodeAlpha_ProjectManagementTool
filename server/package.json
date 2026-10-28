@@ -1,5 +1,5 @@
 {
-  "name": "taskora-server",
+  "name": "taskbora-server",
   "private": true,
   "version": "0.1.0",
   "type": "module",

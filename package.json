@@ -2,7 +2,7 @@
   "name": "codealpha-project-management-tool",
   "private": true,
   "version": "0.1.0",
-  "description": "Taskora — a full-stack project management platform.",
+  "description": "Taskbora — a full-stack project management platform.",
   "workspaces": [
     "client",
     "server"

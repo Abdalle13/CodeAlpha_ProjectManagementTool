@@ -1,8 +1,8 @@
-# Taskora — Collaborative Project Management Tool
+# Taskbora — Collaborative Project Management Tool
 > **CodeAlpha Full Stack Development Internship — Task 3**  
 > Built by **Abdalle Hussein** ([@Abdalle13](https://github.com/Abdalle13))
 
-Taskora is a modern, enterprise-grade collaborative project management and productivity platform inspired by Linear, Asana, and Trello. Designed for seamless team collaboration, it provides interactive Kanban task boards, distinct user and executive admin dashboards, real-time analytics, and downloadable PDF reports.
+Taskbora is a modern, enterprise-grade collaborative project management and productivity platform inspired by Linear, Asana, and Trello. Designed for seamless team collaboration, it provides interactive Kanban task boards, distinct user and executive admin dashboards, real-time analytics, and downloadable PDF reports.
 
 ---
 
@@ -89,7 +89,7 @@ cp client/.env.example client/.env
 Ensure `server/.env` contains your MongoDB connection string and JWT secret:
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/taskora
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/taskbora
 JWT_SECRET=your_jwt_secret_key_here
 CLIENT_URL=http://localhost:5173
 ```
@@ -118,9 +118,9 @@ For quick evaluation or testing:
 
 | Role | Email | Password |
 |---|---|---|
-| **Platform Admin** | `demo@taskora.io` | `Password123!` |
-| **Product Designer** | `sarah@taskora.io` | `Password123!` |
-| **Software Engineer** | `alex@taskora.io` | `Password123!` |
+| **Platform Admin** | `demo@taskbora.io` | `Password123!` |
+| **Product Designer** | `sarah@taskbora.io` | `Password123!` |
+| **Software Engineer** | `alex@taskbora.io` | `Password123!` |
 
 *(You can also click **Instant Demo Login** on the login page to sign in immediately.)*
 

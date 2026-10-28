@@ -6,7 +6,7 @@ import { createApp } from "../src/app.js";
 import { startTestDatabase, stopTestDatabase } from "./helpers/database.js";
 
 process.env.NODE_ENV = "test";
-process.env.JWT_SECRET = "taskora-test-secret-value";
+process.env.JWT_SECRET = "taskbora-test-secret-value";
 
 const app = createApp();
 
@@ -29,7 +29,7 @@ describe("project tasks", () => {
   });
 
   it("creates, lists, and updates tasks for project members", async () => {
-    const owner = await createAccount("Task Owner", `task-owner-${Date.now()}@taskora.test`);
+    const owner = await createAccount("Task Owner", `task-owner-${Date.now()}@taskbora.test`);
     const projectResponse = await request(app)
       .post("/api/projects")
       .set("Cookie", owner.cookie)
@@ -58,8 +58,8 @@ describe("project tasks", () => {
   });
 
   it("rejects invalid task fields and users outside the project", async () => {
-    const owner = await createAccount("Private Task Owner", `private-${Date.now()}@taskora.test`);
-    const stranger = await createAccount("Outside User", `outside-${Date.now()}@taskora.test`);
+    const owner = await createAccount("Private Task Owner", `private-${Date.now()}@taskbora.test`);
+    const stranger = await createAccount("Outside User", `outside-${Date.now()}@taskbora.test`);
     const projectResponse = await request(app)
       .post("/api/projects")
       .set("Cookie", owner.cookie)
@@ -77,8 +77,8 @@ describe("project tasks", () => {
   });
 
   it("limits task edits and deletion to authorized project members", async () => {
-    const owner = await createAccount("Delete Owner", `delete-owner-${Date.now()}@taskora.test`);
-    const teammate = await createAccount("Task Teammate", `task-mate-${Date.now()}@taskora.test`);
+    const owner = await createAccount("Delete Owner", `delete-owner-${Date.now()}@taskbora.test`);
+    const teammate = await createAccount("Task Teammate", `task-mate-${Date.now()}@taskbora.test`);
     const projectResponse = await request(app)
       .post("/api/projects")
       .set("Cookie", owner.cookie)
@@ -123,8 +123,8 @@ describe("project tasks", () => {
   });
 
   it("allows project members to comment and exposes actor-attributed activity", async () => {
-    const owner = await createAccount("Comment Owner", `comment-owner-${Date.now()}@taskora.test`);
-    const outsider = await createAccount("Comment Outsider", `comment-outsider-${Date.now()}@taskora.test`);
+    const owner = await createAccount("Comment Owner", `comment-owner-${Date.now()}@taskbora.test`);
+    const outsider = await createAccount("Comment Outsider", `comment-outsider-${Date.now()}@taskbora.test`);
     const projectResponse = await request(app)
       .post("/api/projects")
       .set("Cookie", owner.cookie)
@@ -161,8 +161,8 @@ describe("project tasks", () => {
   });
 
   it("returns dashboard metrics calculated from accessible projects and tasks", async () => {
-    const owner = await createAccount("Dashboard Owner", `dashboard-owner-${Date.now()}@taskora.test`);
-    const outsider = await createAccount("Dashboard Outsider", `dashboard-outsider-${Date.now()}@taskora.test`);
+    const owner = await createAccount("Dashboard Owner", `dashboard-owner-${Date.now()}@taskbora.test`);
+    const outsider = await createAccount("Dashboard Outsider", `dashboard-outsider-${Date.now()}@taskbora.test`);
     const projectResponse = await request(app)
       .post("/api/projects")
       .set("Cookie", owner.cookie)
@@ -186,8 +186,8 @@ describe("project tasks", () => {
   });
 
   it("lists only accessible tasks with bounded filters and pagination", async () => {
-    const owner = await createAccount("Collection Owner", `collection-owner-${Date.now()}@taskora.test`);
-    const outsider = await createAccount("Collection Outsider", `collection-outsider-${Date.now()}@taskora.test`);
+    const owner = await createAccount("Collection Owner", `collection-owner-${Date.now()}@taskbora.test`);
+    const outsider = await createAccount("Collection Outsider", `collection-outsider-${Date.now()}@taskbora.test`);
     const projectResponse = await request(app)
       .post("/api/projects")
       .set("Cookie", owner.cookie)

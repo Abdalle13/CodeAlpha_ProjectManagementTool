@@ -5,7 +5,7 @@ import { createApp } from "../src/app.js";
 import { startTestDatabase, stopTestDatabase } from "./helpers/database.js";
 
 process.env.NODE_ENV = "test";
-process.env.JWT_SECRET = "taskora-test-secret-value";
+process.env.JWT_SECRET = "taskbora-test-secret-value";
 
 const app = createApp();
 
@@ -31,7 +31,7 @@ describe("projects", () => {
   });
 
   it("creates, lists, and retrieves a project for the owner", async () => {
-    const owner = await createAccount("Owner One", `owner-${Date.now()}@taskora.test`);
+    const owner = await createAccount("Owner One", `owner-${Date.now()}@taskbora.test`);
     const created = await request(app)
       .post("/api/projects")
       .set("Cookie", owner.cookie)
@@ -58,8 +58,8 @@ describe("projects", () => {
   });
 
   it("hides projects from users who are not members", async () => {
-    const owner = await createAccount("Owner Two", `owner2-${Date.now()}@taskora.test`);
-    const stranger = await createAccount("Stranger", `stranger-${Date.now()}@taskora.test`);
+    const owner = await createAccount("Owner Two", `owner2-${Date.now()}@taskbora.test`);
+    const stranger = await createAccount("Stranger", `stranger-${Date.now()}@taskbora.test`);
     const created = await request(app)
       .post("/api/projects")
       .set("Cookie", owner.cookie)
@@ -75,8 +75,8 @@ describe("projects", () => {
   });
 
   it("lets owners add members and blocks members from deleting the project", async () => {
-    const owner = await createAccount("Owner Three", `owner3-${Date.now()}@taskora.test`);
-    const teammate = await createAccount("Teammate", `mate-${Date.now()}@taskora.test`);
+    const owner = await createAccount("Owner Three", `owner3-${Date.now()}@taskbora.test`);
+    const teammate = await createAccount("Teammate", `mate-${Date.now()}@taskbora.test`);
     const created = await request(app)
       .post("/api/projects")
       .set("Cookie", owner.cookie)

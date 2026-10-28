@@ -5,7 +5,7 @@ import { createApp } from "../src/app.js";
 import { startTestDatabase, stopTestDatabase } from "./helpers/database.js";
 
 process.env.NODE_ENV = "test";
-process.env.JWT_SECRET = "taskora-test-secret-value";
+process.env.JWT_SECRET = "taskbora-test-secret-value";
 
 const app = createApp();
 
@@ -18,7 +18,7 @@ describe("authentication", () => {
     await stopTestDatabase();
   });
 
-  const uniqueEmail = () => `ada-${Date.now()}-${Math.random().toString(16).slice(2)}@taskora.test`;
+  const uniqueEmail = () => `ada-${Date.now()}-${Math.random().toString(16).slice(2)}@taskbora.test`;
 
   it("registers a user and returns a public profile with an auth cookie", async () => {
     const email = uniqueEmail();
@@ -34,7 +34,7 @@ describe("authentication", () => {
     assert.equal(response.body.data.user.name, "Ada Lovelace");
     assert.equal(response.body.data.user.passwordHash, undefined);
     assert.equal(response.body.data.user.password, undefined);
-    assert.match(response.headers["set-cookie"]?.join(";") || "", /taskora_token=/);
+    assert.match(response.headers["set-cookie"]?.join(";") || "", /taskbora_token=/);
   });
 
   it("rejects duplicate emails", async () => {
@@ -75,7 +75,7 @@ describe("authentication", () => {
     const response = await request(app)
       .post("/api/auth/login")
       .set("Origin", "https://untrusted.example")
-      .send({ email: "person@taskora.test", password: "correcthorse" });
+      .send({ email: "person@taskbora.test", password: "correcthorse" });
     assert.equal(response.status, 403);
     assert.equal(response.body.error.code, "FORBIDDEN");
   });
