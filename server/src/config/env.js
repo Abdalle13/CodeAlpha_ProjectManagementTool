@@ -43,7 +43,7 @@ export const env = {
     return readEnv("COOKIE_SECURE", "false") === "true";
   },
   get authCookieName() {
-    return readEnv("AUTH_COOKIE_NAME", "taskora_token");
+    return readEnv("AUTH_COOKIE_NAME", "taskbora_token");
   },
   get systemAdminEmail() {
     return readEnv("SYSTEM_ADMIN_EMAIL", "").trim().toLowerCase();

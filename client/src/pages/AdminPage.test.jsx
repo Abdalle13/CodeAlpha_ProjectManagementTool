@@ -6,7 +6,7 @@ import AdminPage from "./AdminPage.jsx";
 
 vi.mock("../lib/api.js", () => ({
   getCurrentUser: vi.fn().mockResolvedValue({
-    data: { user: { id: "admin1", name: "Taskora Admin", email: "root@taskora.test", systemRole: "admin" } },
+    data: { user: { id: "admin1", name: "Taskbora Admin", email: "root@taskbora.test", systemRole: "admin" } },
   }),
   listAdminUsers: vi.fn(),
   updateAdminUser: vi.fn(),
@@ -25,7 +25,7 @@ describe("AdminPage", () => {
         items: [{
           id: "user1",
           name: "Grace Hopper",
-          email: "grace@taskora.test",
+          email: "grace@taskbora.test",
           systemRole: "user",
           isActive: true,
           createdAt: "2026-01-01T00:00:00.000Z",
@@ -50,7 +50,7 @@ describe("AdminPage", () => {
     renderApp(<AdminPage />, { route: "/admin" });
 
     // Users tab shows first
-    expect(await screen.findByText("grace@taskora.test")).toBeInTheDocument();
+    expect(await screen.findByText("grace@taskbora.test")).toBeInTheDocument();
 
     // Click Projects tab to see project data
     await user.click(screen.getByRole("button", { name: /projects/i }));
@@ -65,7 +65,7 @@ describe("AdminPage", () => {
         user: {
           id: "user1",
           name: "Grace Hopper",
-          email: "grace@taskora.test",
+          email: "grace@taskbora.test",
           systemRole: "admin",
           isActive: true,
           createdAt: "2026-01-01T00:00:00.000Z",

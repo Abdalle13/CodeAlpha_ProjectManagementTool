@@ -13,10 +13,10 @@ async function start() {
     }
 
     app.listen(env.port, () => {
-      console.log(`Taskora API listening on port ${env.port}`);
+      console.log(`Taskbora API listening on port ${env.port}`);
     });
   } catch (error) {
-    console.error("Failed to start Taskora API.");
+    console.error("Failed to start Taskbora API.");
     if (!isProduction()) {
       console.error(error);
     }

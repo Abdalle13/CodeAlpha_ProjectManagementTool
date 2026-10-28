@@ -45,35 +45,35 @@ async function runSeed() {
   });
 
   const sarah = await User.create({
-    name: "Sarah Chen", email: "sarah@taskora.io",
+    name: "Sarah Chen", email: "sarah@taskbora.io",
     passwordHash: userHash, systemRole: "user", role: "member",
     title: "UI/UX Designer",
     avatarColor: "#ec4899", isActive: true,
   });
 
   const alex = await User.create({
-    name: "Alex Morgan", email: "alex@taskora.io",
+    name: "Alex Morgan", email: "alex@taskbora.io",
     passwordHash: userHash, systemRole: "user", role: "member",
     title: "Full Stack Engineer",
     avatarColor: "#f59e0b", isActive: true,
   });
 
   const khalid = await User.create({
-    name: "Khalid Jama", email: "khalid@taskora.io",
+    name: "Khalid Jama", email: "khalid@taskbora.io",
     passwordHash: userHash, systemRole: "user", role: "member",
     title: "Product Manager",
     avatarColor: "#10b981", isActive: true,
   });
 
   const priya = await User.create({
-    name: "Priya Sharma", email: "priya@taskora.io",
+    name: "Priya Sharma", email: "priya@taskbora.io",
     passwordHash: userHash, systemRole: "user", role: "member",
     title: "Backend Engineer",
     avatarColor: "#ef4444", isActive: true,
   });
 
   const omar = await User.create({
-    name: "Omar Hassan", email: "omar@taskora.io",
+    name: "Omar Hassan", email: "omar@taskbora.io",
     passwordHash: userHash, systemRole: "user", role: "member",
     title: "DevOps Engineer",
     avatarColor: "#8b5cf6", isActive: true,
@@ -472,11 +472,11 @@ async function runSeed() {
   console.log("[seed] 9 activity entries logged");
 
   console.log("\n================================================");
-  console.log("   TASKORA SEED COMPLETE");
+  console.log("   TASKBORA SEED COMPLETE");
   console.log("================================================");
   console.log("  Admin:         admin@gmail.com         / 12345678");
   console.log("  Your account:  cabdale13yare@gmail.com / 12345678");
-  console.log("  Others:        *@taskora.io            / 12345678");
+  console.log("  Others:        *@taskbora.io            / 12345678");
   console.log("  7 users | 5 projects | 25 tasks | 8 comments | 9 activities");
   console.log("================================================\n");
   process.exit(0);

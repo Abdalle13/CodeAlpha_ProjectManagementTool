@@ -51,7 +51,7 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       title="Create Account"
-      subtitle="Sign up for Taskora to plan and manage your projects."
+      subtitle="Sign up for Taskbora to plan and manage your projects."
       switchText="Already Have An Account?"
       switchTo="/login"
       switchLabel="Log In."

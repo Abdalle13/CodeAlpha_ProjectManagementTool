@@ -6,7 +6,7 @@ import ProjectsPage from "./ProjectsPage.jsx";
 
 vi.mock("../lib/api.js", () => ({
   getCurrentUser: vi.fn().mockResolvedValue({
-    data: { user: { id: "u1", name: "Ada Lovelace", email: "ada@taskora.test" } },
+    data: { user: { id: "u1", name: "Ada Lovelace", email: "ada@taskbora.test" } },
   }),
   listProjects: vi.fn(),
   createProject: vi.fn(),

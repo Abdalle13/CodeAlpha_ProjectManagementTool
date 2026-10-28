@@ -64,7 +64,7 @@ export function createApp() {
     res.json({
       success: true,
       data: {
-        name: "Taskora API",
+        name: "Taskbora API",
         tagline: "Plan projects. Manage tasks. Work together.",
       },
     });
@@ -102,7 +102,7 @@ export default async function handler(request, response) {
     if (isProduction()) validateProductionEnv();
     return defaultApp(request, response);
   } catch (error) {
-    console.error("Taskora API initialization failed:", error.message);
+    console.error("Taskbora API initialization failed:", error.message);
     return response.status(503).json({
       success: false,
       error: { message: error.message || "API is temporarily unavailable.", code: "SERVICE_UNAVAILABLE" },

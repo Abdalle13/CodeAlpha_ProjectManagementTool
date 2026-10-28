@@ -4,12 +4,12 @@ import { getCurrentUser, loginAccount, logoutAccount, registerAccount } from "..
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const hasToken = typeof window !== "undefined" && Boolean(localStorage.getItem("taskora_token"));
+  const hasToken = typeof window !== "undefined" && Boolean(localStorage.getItem("taskbora_token"));
   const [user, setUser] = useState(null);
   const [status, setStatus] = useState(hasToken ? "loading" : "ready");
 
   const refreshUser = useCallback(async () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("taskora_token") : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("taskbora_token") : null;
     if (!token) {
       setUser(null);
       setStatus("ready");
@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
       setUser(null);
       setStatus("ready");
       if (typeof window !== "undefined") {
-        localStorage.removeItem("taskora_token");
+        localStorage.removeItem("taskbora_token");
       }
     }, 10000);
 
@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
       if (!safetyFired) {
         setUser(null);
         if (typeof window !== "undefined") {
-          localStorage.removeItem("taskora_token");
+          localStorage.removeItem("taskbora_token");
         }
       }
     } finally {

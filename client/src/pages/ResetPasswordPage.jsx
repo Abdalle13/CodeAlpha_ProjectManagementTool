@@ -46,7 +46,7 @@ export default function ResetPasswordPage() {
   return (
     <AuthLayout
       title="Create New Password"
-      subtitle="Choose a secure password for your Taskora workspace account."
+      subtitle="Choose a secure password for your Taskbora workspace account."
       switchText="Remembered your password?"
       switchTo="/login"
       switchLabel="Log In."

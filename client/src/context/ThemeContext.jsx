@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "taskora-theme";
+const STORAGE_KEY = "taskbora-theme";
 const ThemeContext = createContext(null);
 
 function applyTheme(theme) {

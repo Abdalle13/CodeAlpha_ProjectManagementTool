@@ -6,7 +6,7 @@ function resolveApiBaseUrl() {
     : "";
   if (!envUrl) {
     if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-      return "https://taskora-two-drab.vercel.app/api";
+      return "https://taskbora-two-drab.vercel.app/api";
     }
     return "/api";
   }
@@ -25,7 +25,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("taskora_token");
+    const token = localStorage.getItem("taskbora_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -37,7 +37,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("taskora_token");
+      localStorage.removeItem("taskbora_token");
     }
     return Promise.reject(error);
   },
@@ -55,7 +55,7 @@ export async function getHealth() {
 export async function registerAccount(payload) {
   const response = await api.post("/auth/register", payload);
   if (response.data?.data?.token && typeof window !== "undefined") {
-    localStorage.setItem("taskora_token", response.data.data.token);
+    localStorage.setItem("taskbora_token", response.data.data.token);
   }
   return response.data;
 }
@@ -63,7 +63,7 @@ export async function registerAccount(payload) {
 export async function loginAccount(payload) {
   const response = await api.post("/auth/login", payload);
   if (response.data?.data?.token && typeof window !== "undefined") {
-    localStorage.setItem("taskora_token", response.data.data.token);
+    localStorage.setItem("taskbora_token", response.data.data.token);
   }
   return response.data;
 }
@@ -74,7 +74,7 @@ export async function logoutAccount() {
     return response.data;
   } finally {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("taskora_token");
+      localStorage.removeItem("taskbora_token");
     }
   }
 }

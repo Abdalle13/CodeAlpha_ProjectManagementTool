@@ -11,7 +11,7 @@ function renderWithAuth(value) {
       <ThemeProvider>
         <AuthContext.Provider value={value}>
           <Routes>
-            <Route path="/login" element={<p>Sign in to Taskora</p>} />
+            <Route path="/login" element={<p>Sign in to Taskbora</p>} />
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<p>Dashboard</p>} />
             </Route>
@@ -25,17 +25,17 @@ function renderWithAuth(value) {
 describe("ProtectedRoute", () => {
   it("shows a loading state while the session is checked", () => {
     renderWithAuth({ user: null, status: "loading", isAuthenticated: false });
-    expect(document.body).toHaveTextContent(/loading taskora/i);
+    expect(document.body).toHaveTextContent(/loading taskbora/i);
   });
 
   it("redirects anonymous visitors to login", () => {
     renderWithAuth({ user: null, status: "ready", isAuthenticated: false });
-    expect(screen.getByText(/sign in to taskora/i)).toBeInTheDocument();
+    expect(screen.getByText(/sign in to taskbora/i)).toBeInTheDocument();
   });
 
   it("renders protected content for authenticated users", () => {
     renderWithAuth({
-      user: { name: "Ada", email: "ada@taskora.test" },
+      user: { name: "Ada", email: "ada@taskbora.test" },
       status: "ready",
       isAuthenticated: true,
     });

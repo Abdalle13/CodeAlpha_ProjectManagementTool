@@ -1,4 +1,4 @@
-export function TaskoraLogo({ size = 32, className = "" }) {
+export function TaskboraLogo({ size = 32, className = "" }) {
   return (
     <svg
       width={size}
@@ -13,15 +13,15 @@ export function TaskoraLogo({ size = 32, className = "" }) {
         borderRadius: `${size * 0.25}px`,
         boxShadow: "0 2px 8px rgba(37, 99, 235, 0.25)",
       }}
-      aria-label="Taskora Logo"
+      aria-label="Taskbora Logo"
     >
       <defs>
-        <linearGradient id="taskora-t-grad-app" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="taskbora-t-grad-app" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#3b82f6" />
           <stop offset="100%" stopColor="#1d4ed8" />
         </linearGradient>
       </defs>
-      <rect width="64" height="64" rx="16" fill="url(#taskora-t-grad-app)" />
+      <rect width="64" height="64" rx="16" fill="url(#taskbora-t-grad-app)" />
       <rect
         x="1.5"
         y="1.5"
@@ -52,7 +52,7 @@ export default function BrandMark({ compact = false }) {
         userSelect: "none",
       }}
     >
-      <TaskoraLogo size={logoSize} />
+      <TaskboraLogo size={logoSize} />
       <div style={{ lineHeight: 1.15 }}>
         <span
           style={{
@@ -63,7 +63,7 @@ export default function BrandMark({ compact = false }) {
             display: "inline-block",
           }}
         >
-          Taskora
+          Taskbora
         </span>
       </div>
     </div>

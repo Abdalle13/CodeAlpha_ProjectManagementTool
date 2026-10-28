@@ -20,6 +20,6 @@ describe("theme switching", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(false);
     await user.click(screen.getByRole("button", { name: /dark|theme/i }));
     expect(document.documentElement.classList.contains("dark")).toBe(true);
-    expect(localStorage.getItem("taskora-theme")).toBe("dark");
+    expect(localStorage.getItem("taskbora-theme")).toBe("dark");
   });
 });

@@ -1,4 +1,4 @@
--- Taskora Supabase SQL Schema
+-- Taskbora Supabase SQL Schema
 -- Run this in Supabase SQL Editor
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";

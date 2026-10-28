@@ -9,7 +9,7 @@ router.get("/", (_req, res) => {
   res.json({
     success: true,
     data: {
-      service: "taskora-api",
+      service: "taskbora-api",
       status: "ok",
       timestamp: new Date().toISOString(),
       database,

@@ -18,12 +18,12 @@ describe("LoginPage", () => {
     vi.clearAllMocks();
   });
 
-  it("shows Taskora branding and validates empty credentials", async () => {
+  it("shows Taskbora branding and validates empty credentials", async () => {
     const user = userEvent.setup();
     renderApp(<LoginPage />, { route: "/login" });
 
     // Wait for heading
-    expect(await screen.findByRole("heading", { name: /sign in to taskora/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /sign in to taskbora/i })).toBeInTheDocument();
 
     // Submit empty form — should show error
     await user.click(screen.getByRole("button", { name: /sign in/i }));

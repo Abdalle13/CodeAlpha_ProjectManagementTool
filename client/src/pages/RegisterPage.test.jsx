@@ -18,7 +18,7 @@ describe("RegisterPage", () => {
     vi.clearAllMocks();
   });
 
-  it("shows Taskora branding and validates incomplete registration", async () => {
+  it("shows Taskbora branding and validates incomplete registration", async () => {
     const user = userEvent.setup();
     renderApp(<RegisterPage />, { route: "/register" });
 

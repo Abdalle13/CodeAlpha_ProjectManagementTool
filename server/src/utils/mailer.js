@@ -34,7 +34,7 @@ export async function sendPasswordResetEmail({ to, resetToken, userName }) {
 
   const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
   const resetUrl = `${clientOrigin}/reset-password?token=${resetToken}&email=${encodeURIComponent(to)}`;
-  const from = process.env.EMAIL_FROM || `Taskora <${process.env.EMAIL_USER}>`;
+  const from = process.env.EMAIL_FROM || `Taskbora <${process.env.EMAIL_USER}>`;
 
   const html = `
     <!DOCTYPE html>
@@ -42,7 +42,7 @@ export async function sendPasswordResetEmail({ to, resetToken, userName }) {
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Reset your Taskora password</title>
+      <title>Reset your Taskbora password</title>
     </head>
     <body style="margin: 0; padding: 32px 16px; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 540px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);">
@@ -55,7 +55,7 @@ export async function sendPasswordResetEmail({ to, resetToken, userName }) {
                   <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 26px; font-weight: 900; color: #ffffff; line-height: 44px; display: inline-block;">T</span>
                 </td>
                 <td style="padding-left: 14px; vertical-align: middle;">
-                  <div style="font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; line-height: 1.1;">Taskora</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; line-height: 1.1;">Taskbora</div>
                   <div style="font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px;">Project Management Platform</div>
                 </td>
               </tr>
@@ -69,7 +69,7 @@ export async function sendPasswordResetEmail({ to, resetToken, userName }) {
             <h1 style="color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 16px 0; letter-spacing: -0.3px;">Password Reset Request</h1>
             <p style="color: #334155; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">Hello ${userName || "there"},</p>
             <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0;">
-              We received a request to reset the password for your Taskora workspace account. Click the secure button below to choose a new password:
+              We received a request to reset the password for your Taskbora workspace account. Click the secure button below to choose a new password:
             </p>
 
             <!-- Call to action button -->
@@ -98,7 +98,7 @@ export async function sendPasswordResetEmail({ to, resetToken, userName }) {
         <tr>
           <td style="padding: 20px 32px; background: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
             <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-              &copy; ${new Date().getFullYear()} Taskora. All rights reserved.
+              &copy; ${new Date().getFullYear()} Taskbora. All rights reserved.
             </p>
           </td>
         </tr>
@@ -110,7 +110,7 @@ export async function sendPasswordResetEmail({ to, resetToken, userName }) {
   return await transporter.sendMail({
     from,
     to,
-    subject: "Reset your Taskora password",
+    subject: "Reset your Taskbora password",
     text: `Hello ${userName || ""},\n\nPlease use this link to reset your password:\n${resetUrl}\n\nThis link will expire in 1 hour.`,
     html,
   });
