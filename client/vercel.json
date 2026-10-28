@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://taskbora-two-drab.vercel.app/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://taskbora-api.onrender.com/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
