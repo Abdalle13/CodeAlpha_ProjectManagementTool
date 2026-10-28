@@ -4,17 +4,46 @@ import { getCurrentUser, loginAccount, logoutAccount, registerAccount } from "..
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const hasToken = typeof window !== "undefined" && Boolean(localStorage.getItem("taskora_token"));
   const [user, setUser] = useState(null);
-  const [status, setStatus] = useState("loading");
+  const [status, setStatus] = useState(hasToken ? "loading" : "ready");
 
   const refreshUser = useCallback(async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("taskora_token") : null;
+    if (!token) {
+      setUser(null);
+      setStatus("ready");
+      return;
+    }
+
+    // Hard safety timeout: if API never responds (e.g. server down), stop loading after 10s
+    let safetyFired = false;
+    const safetyTimer = setTimeout(() => {
+      safetyFired = true;
+      setUser(null);
+      setStatus("ready");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("taskora_token");
+      }
+    }, 10000);
+
     try {
       const payload = await getCurrentUser();
-      setUser(payload.data.user);
+      if (!safetyFired) {
+        setUser(payload.data.user);
+      }
     } catch {
-      setUser(null);
+      if (!safetyFired) {
+        setUser(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("taskora_token");
+        }
+      }
     } finally {
-      setStatus("ready");
+      clearTimeout(safetyTimer);
+      if (!safetyFired) {
+        setStatus("ready");
+      }
     }
   }, []);
 

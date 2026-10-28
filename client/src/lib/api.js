@@ -90,7 +90,7 @@ export async function resetPasswordApi(payload) {
 }
 
 export async function getCurrentUser() {
-  const response = await api.get("/auth/me");
+  const response = await api.get("/auth/me", { timeout: 8000 });
   return response.data;
 }
 
