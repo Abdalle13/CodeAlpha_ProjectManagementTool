@@ -323,3 +323,11 @@ select.input { cursor: pointer; }
     grid-template-columns: 1fr !important;
   }
 }
+
+
+@media screen and (max-width: 767px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
