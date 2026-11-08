@@ -1,10 +1,14 @@
 import axios from "axios";
 
+const FALLBACK_API_URL = "https://taskbora.vercel.app/api";
+
 function resolveApiBaseUrl() {
   const envUrl = typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL
     ? String(import.meta.env.VITE_API_URL).trim()
     : "";
-  if (!envUrl) { return "/api"; }
+  if (!envUrl || envUrl.includes("onrender.com")) {
+    return "/api";
+  }
   const clean = envUrl.replace(/\/+$/, "");
   if (clean.startsWith("http://") || clean.startsWith("https://")) {
     return clean.endsWith("/api") ? clean : `${clean}/api`;
@@ -15,7 +19,7 @@ function resolveApiBaseUrl() {
 const api = axios.create({
   baseURL: resolveApiBaseUrl(),
   withCredentials: true,
-  timeout: 45000,
+  timeout: 30000,
 });
 
 api.interceptors.request.use((config) => {
@@ -30,7 +34,19 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalConfig = error?.config;
+    if (
+      originalConfig &&
+      !originalConfig._retried &&
+      (error?.message === "Network Error" || error?.response?.status === 404 || error?.response?.status === 502) &&
+      (originalConfig.baseURL === "/api" || !originalConfig.baseURL.startsWith("http"))
+    ) {
+      originalConfig._retried = true;
+      originalConfig.baseURL = FALLBACK_API_URL;
+      return axios(originalConfig);
+    }
+
     if (error?.response?.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem("taskbora_token");
     }
@@ -246,5 +262,6 @@ export async function listFeedActivity(params = {}) {
 }
 
 export default api;
+
 
 

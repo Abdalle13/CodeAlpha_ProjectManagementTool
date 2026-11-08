@@ -33,23 +33,7 @@ export function createApp() {
   );
   app.use(
     cors({
-      origin: (requestOrigin, callback) => {
-        if (!requestOrigin) return callback(null, true);
-        const cleanOrigin = requestOrigin.trim().replace(/\/+$/, "");
-        const allowed = env.allowedOrigins;
-        if (allowed.length === 0 || allowed.includes(cleanOrigin) || !isProduction()) {
-          return callback(null, true);
-        }
-        try {
-          const parsed = new URL(cleanOrigin);
-          if (parsed.hostname.endsWith(".vercel.app") || parsed.hostname.endsWith(".netlify.app") || parsed.hostname === "localhost") {
-            return callback(null, true);
-          }
-        } catch {
-          // ignore
-        }
-        return callback(new Error("Origin not allowed by CORS"));
-      },
+      origin: true,
       credentials: true,
     }),
   );
@@ -109,3 +93,4 @@ export default async function handler(request, response) {
     });
   }
 }
+
