@@ -85,7 +85,7 @@ export async function resetPasswordApi(payload) {
 }
 
 export async function getCurrentUser() {
-  const response = await api.get("/auth/me", { timeout: 25000 });
+  const response = await api.get("/auth/me", { timeout: 6000 });
   return response.data;
 }
 
@@ -246,4 +246,5 @@ export async function listFeedActivity(params = {}) {
 }
 
 export default api;
+
 

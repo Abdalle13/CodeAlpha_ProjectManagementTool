@@ -20,11 +20,9 @@ export function AuthProvider({ children }) {
       const payload = await getCurrentUser();
       setUser(payload.data.user);
     } catch (err) {
-      if (err?.response?.status === 401) {
-        setUser(null);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("taskbora_token");
-        }
+      setUser(null);
+      if (err?.response?.status === 401 && typeof window !== "undefined") {
+        localStorage.removeItem("taskbora_token");
       }
     } finally {
       setStatus("ready");
