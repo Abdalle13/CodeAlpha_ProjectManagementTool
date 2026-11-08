@@ -1,2 +1,2 @@
-/api/*  https://taskora-two-drab.vercel.app/api/:splat  200!
-/*      /index.html                                     200
+/api/*  https://taskbora.vercel.app/api/:splat  200!
+/*      /index.html                             200
