@@ -4,12 +4,7 @@ function resolveApiBaseUrl() {
   const envUrl = typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL
     ? String(import.meta.env.VITE_API_URL).trim()
     : "";
-  if (!envUrl) {
-    if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-      return "https://taskbora-api.onrender.com/api";
-    }
-    return "/api";
-  }
+  if (!envUrl) { return "/api"; }
   const clean = envUrl.replace(/\/+$/, "");
   if (clean.startsWith("http://") || clean.startsWith("https://")) {
     return clean.endsWith("/api") ? clean : `${clean}/api`;
@@ -90,7 +85,7 @@ export async function resetPasswordApi(payload) {
 }
 
 export async function getCurrentUser() {
-  const response = await api.get("/auth/me", { timeout: 8000 });
+  const response = await api.get("/auth/me", { timeout: 25000 });
   return response.data;
 }
 
@@ -251,3 +246,4 @@ export async function listFeedActivity(params = {}) {
 }
 
 export default api;
+

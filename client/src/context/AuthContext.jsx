@@ -16,34 +16,18 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Hard safety timeout: if API never responds (e.g. server down), stop loading after 10s
-    let safetyFired = false;
-    const safetyTimer = setTimeout(() => {
-      safetyFired = true;
-      setUser(null);
-      setStatus("ready");
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("taskbora_token");
-      }
-    }, 10000);
-
     try {
       const payload = await getCurrentUser();
-      if (!safetyFired) {
-        setUser(payload.data.user);
-      }
-    } catch {
-      if (!safetyFired) {
+      setUser(payload.data.user);
+    } catch (err) {
+      if (err?.response?.status === 401) {
         setUser(null);
         if (typeof window !== "undefined") {
           localStorage.removeItem("taskbora_token");
         }
       }
     } finally {
-      clearTimeout(safetyTimer);
-      if (!safetyFired) {
-        setStatus("ready");
-      }
+      setStatus("ready");
     }
   }, []);
 
