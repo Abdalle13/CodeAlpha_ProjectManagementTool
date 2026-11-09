@@ -22,19 +22,34 @@ function validateName(name) {
 }
 
 export const register = asyncHandler(async (req, res) => {
-  const name = validateName(req.body?.name);
-  const email = normalizeEmail(req.body?.email);
-  const password = req.body?.password;
+  const rawUsername = String(req.body?.username || req.body?.name || "").trim();
+  const name = validateName(rawUsername);
 
+  // Check unique username
+  const existingName = await UserDB.findByName(name);
+  if (existingName) {
+    throw new AppError("This username is already taken. Please choose another.", 409, "CONFLICT");
+  }
+
+  // Safe fallback if email was omitted
+  let rawEmail = String(req.body?.email || "").trim();
+  if (!rawEmail) {
+    const slug = name.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    rawEmail = `${slug || "user_" + Date.now()}@taskbora.app`;
+  }
+
+  const email = normalizeEmail(rawEmail);
   if (!isValidEmail(email)) {
     throw new AppError("Enter a valid email address.", 400, "VALIDATION_ERROR");
   }
-  validatePassword(password);
 
-  const existing = await UserDB.findOne({ email });
-  if (existing) {
+  const existingEmail = await UserDB.findOne({ email });
+  if (existingEmail) {
     throw new AppError("An account with this email already exists.", 409, "CONFLICT");
   }
+
+  const password = req.body?.password;
+  validatePassword(password);
 
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await UserDB.create({ name, email, passwordHash });
@@ -48,11 +63,11 @@ export const register = asyncHandler(async (req, res) => {
 });
 
 export const login = asyncHandler(async (req, res) => {
-  const loginInput = String(req.body?.email || req.body?.username || req.body?.login || "").trim();
+  const loginInput = String(req.body?.username || req.body?.login || req.body?.email || "").trim();
   const password = req.body?.password;
 
   if (!loginInput || typeof password !== "string" || !password) {
-    throw new AppError("Enter your username or email and password.", 400, "VALIDATION_ERROR");
+    throw new AppError("Enter your username and password.", 400, "VALIDATION_ERROR");
   }
 
   const isEmail = isValidEmail(loginInput);
@@ -67,10 +82,7 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   if (!user) {
-    throw new AppError(
-      isEmail ? "No account found with this email address." : "No account found with this username.",
-      404, "NOT_FOUND"
-    );
+    throw new AppError("No account found with this username.", 404, "NOT_FOUND");
   }
   if (!user.isActive) {
     throw new AppError("This account has been deactivated. Please contact support.", 401, "ACCOUNT_INACTIVE");
@@ -181,3 +193,4 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   res.json({ success: true, message: "Password reset successful! You can now sign in with your new password." });
 });
+

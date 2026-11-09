@@ -24,7 +24,7 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate   = useNavigate();
   const location   = useLocation();
-  const [loginInput, setLoginInput]       = useState("");
+  const [username,   setUsername]         = useState("");
   const [password,   setPassword]         = useState("");
   const [rememberMe, setRememberMe]       = useState(false);
   const [showPassword, setShowPassword]   = useState(false);
@@ -33,14 +33,15 @@ export default function LoginPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!loginInput || !password) {
-      setError("Please enter your email or username and password.");
+    const cleanUsername = username.trim();
+    if (!cleanUsername || !password) {
+      setError("Please enter your username and password.");
       return;
     }
     setPending(true);
     setError("");
     try {
-      const loggedUser = await login({ email: loginInput, password });
+      const loggedUser = await login({ username: cleanUsername, password });
       const defaultDest = loggedUser?.systemRole === "admin" ? "/admin" : "/";
       const next = location.state?.from && location.state.from !== "/login" ? location.state.from : defaultDest;
       navigate(loggedUser?.systemRole === "admin" ? "/admin" : next, { replace: true });
@@ -54,24 +55,24 @@ export default function LoginPage() {
   return (
     <AuthLayout
       title="Welcome Back"
-      subtitle="Enter your email and password to access your account."
+      subtitle="Enter your username and password to access your account."
       switchText="Don't Have An Account?"
       switchTo="/register"
       switchLabel="Register Now."
     >
       <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: "1.1rem" }}>
         <div>
-          <label className="label" htmlFor="login-input" style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--ink)", marginBottom: "0.35rem" }}>
-            Email
+          <label className="label" htmlFor="login-username" style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--ink)", marginBottom: "0.35rem" }}>
+            Username
           </label>
           <input
-            id="login-input"
+            id="login-username"
             className="input input-lg"
             type="text"
             autoComplete="username"
-            placeholder="johndoe@gmail.com"
-            value={loginInput}
-            onChange={e => setLoginInput(e.target.value)}
+            placeholder="e.g. alex"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
             required
             style={{ borderRadius: "8px" }}
           />
@@ -87,7 +88,7 @@ export default function LoginPage() {
               className="input input-lg"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
-              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              placeholder="••••••••"
               value={password}
               onChange={e => setPassword(e.target.value)}
               style={{ paddingRight: "2.5rem", borderRadius: "8px" }}
@@ -147,7 +148,7 @@ export default function LoginPage() {
           style={{ width: "100%", borderRadius: "8px", fontWeight: 700, marginTop: "0.25rem" }}
           disabled={pending}
         >
-          {pending ? "Logging Inâ€¦" : "Log In"}
+          {pending ? "Logging In…" : "Log In"}
         </button>
       </form>
     </AuthLayout>

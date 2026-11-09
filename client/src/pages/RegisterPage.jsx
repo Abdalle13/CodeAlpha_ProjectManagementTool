@@ -23,7 +23,8 @@ function IconEyeOff() {
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate     = useNavigate();
-  const [name,        setName]        = useState("");
+  const [username,    setUsername]    = useState("");
+  const [fullName,    setFullName]    = useState("");
   const [email,       setEmail]       = useState("");
   const [password,    setPassword]    = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -32,14 +33,28 @@ export default function RegisterPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!name || !email || !password) {
-      setError("Please complete all required fields.");
+    const cleanUsername = username.trim();
+    if (!cleanUsername || !password) {
+      setError("Please choose a username and password.");
+      return;
+    }
+    if (cleanUsername.length < 3) {
+      setError("Username must be at least 3 characters long.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
       return;
     }
     setPending(true);
     setError("");
     try {
-      await register({ name, email, password });
+      await register({
+        username: cleanUsername,
+        name: fullName.trim() || cleanUsername,
+        email: email.trim() || "",
+        password,
+      });
       navigate("/", { replace: true });
     } catch (err) {
       setError(getErrorMessage(err, "Registration failed. Please check your details."));
@@ -51,42 +66,57 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       title="Create Account"
-      subtitle="Sign up for Taskbora to plan and manage your projects."
+      subtitle="Sign up for Taskbora with your username and password."
       switchText="Already Have An Account?"
       switchTo="/login"
       switchLabel="Log In."
     >
-      <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: "1.1rem" }}>
+      <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: "1.05rem" }}>
         <div>
-          <label className="label" htmlFor="reg-name" style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--ink)", marginBottom: "0.35rem" }}>
-            Full Name
+          <label className="label" htmlFor="reg-username" style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--ink)", marginBottom: "0.35rem" }}>
+            Username
           </label>
           <input
-            id="reg-name"
+            id="reg-username"
             className="input input-lg"
             type="text"
-            autoComplete="name"
-            placeholder="John Doe"
-            value={name}
-            onChange={e => setName(e.target.value)}
+            autoComplete="username"
+            placeholder="e.g. alex"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
             required
             style={{ borderRadius: "8px" }}
           />
         </div>
 
         <div>
+          <label className="label" htmlFor="reg-fullname" style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--ink)", marginBottom: "0.35rem" }}>
+            Full Name <span style={{ color: "var(--muted)", fontWeight: 400 }}>(Optional)</span>
+          </label>
+          <input
+            id="reg-fullname"
+            className="input input-lg"
+            type="text"
+            autoComplete="name"
+            placeholder="e.g. Alex Morgan"
+            value={fullName}
+            onChange={e => setFullName(e.target.value)}
+            style={{ borderRadius: "8px" }}
+          />
+        </div>
+
+        <div>
           <label className="label" htmlFor="reg-email" style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--ink)", marginBottom: "0.35rem" }}>
-            Email
+            Email <span style={{ color: "var(--muted)", fontWeight: 400 }}>(Optional)</span>
           </label>
           <input
             id="reg-email"
             className="input input-lg"
             type="email"
             autoComplete="email"
-            placeholder="johndoe@gmail.com"
+            placeholder="alex@gmail.com"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            required
             style={{ borderRadius: "8px" }}
           />
         </div>
@@ -101,7 +131,7 @@ export default function RegisterPage() {
               className="input input-lg"
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
-              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              placeholder="••••••••"
               value={password}
               onChange={e => setPassword(e.target.value)}
               style={{ paddingRight: "2.5rem", borderRadius: "8px" }}
@@ -142,7 +172,7 @@ export default function RegisterPage() {
           style={{ width: "100%", borderRadius: "8px", fontWeight: 700, marginTop: "0.25rem" }}
           disabled={pending}
         >
-          {pending ? "Creating Accountâ€¦" : "Register Now"}
+          {pending ? "Creating Account…" : "Register Now"}
         </button>
       </form>
     </AuthLayout>
