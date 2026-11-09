@@ -70,7 +70,7 @@ export default function LoginPage() {
             className="input input-lg"
             type="text"
             autoComplete="username"
-            placeholder="e.g. alex"
+            placeholder="johndoe"
             value={username}
             onChange={e => setUsername(e.target.value)}
             required
@@ -88,7 +88,7 @@ export default function LoginPage() {
               className="input input-lg"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder="Enter your password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               style={{ paddingRight: "2.5rem", borderRadius: "8px" }}

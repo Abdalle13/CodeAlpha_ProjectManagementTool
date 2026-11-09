@@ -24,7 +24,6 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const navigate     = useNavigate();
   const [username,    setUsername]    = useState("");
-  const [fullName,    setFullName]    = useState("");
   const [email,       setEmail]       = useState("");
   const [password,    setPassword]    = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -51,7 +50,7 @@ export default function RegisterPage() {
     try {
       await register({
         username: cleanUsername,
-        name: fullName.trim() || cleanUsername,
+        name: cleanUsername,
         email: email.trim() || "",
         password,
       });
@@ -71,7 +70,7 @@ export default function RegisterPage() {
       switchTo="/login"
       switchLabel="Log In."
     >
-      <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: "1.05rem" }}>
+      <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: "1.1rem" }}>
         <div>
           <label className="label" htmlFor="reg-username" style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--ink)", marginBottom: "0.35rem" }}>
             Username
@@ -81,26 +80,10 @@ export default function RegisterPage() {
             className="input input-lg"
             type="text"
             autoComplete="username"
-            placeholder="e.g. alex"
+            placeholder="johndoe"
             value={username}
             onChange={e => setUsername(e.target.value)}
             required
-            style={{ borderRadius: "8px" }}
-          />
-        </div>
-
-        <div>
-          <label className="label" htmlFor="reg-fullname" style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--ink)", marginBottom: "0.35rem" }}>
-            Full Name <span style={{ color: "var(--muted)", fontWeight: 400 }}>(Optional)</span>
-          </label>
-          <input
-            id="reg-fullname"
-            className="input input-lg"
-            type="text"
-            autoComplete="name"
-            placeholder="e.g. Alex Morgan"
-            value={fullName}
-            onChange={e => setFullName(e.target.value)}
             style={{ borderRadius: "8px" }}
           />
         </div>
@@ -114,7 +97,7 @@ export default function RegisterPage() {
             className="input input-lg"
             type="email"
             autoComplete="email"
-            placeholder="alex@gmail.com"
+            placeholder="johndoe@gmail.com"
             value={email}
             onChange={e => setEmail(e.target.value)}
             style={{ borderRadius: "8px" }}
@@ -131,7 +114,7 @@ export default function RegisterPage() {
               className="input input-lg"
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
-              placeholder="••••••••"
+              placeholder="Enter at least 8 characters"
               value={password}
               onChange={e => setPassword(e.target.value)}
               style={{ paddingRight: "2.5rem", borderRadius: "8px" }}
